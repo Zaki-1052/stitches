@@ -1,0 +1,95 @@
+/* web/src/styles/theme.css — single source of truth for ALL tokens.
+   Copied verbatim from docs/DESIGN.md §2. No hex codes anywhere else in the codebase. */
+
+@import "tailwindcss";
+
+@plugin "daisyui" {
+  themes: stitches --default, stitchesdim;
+}
+
+/* ── The craft room (app-wide) ─────────────────────────── */
+@plugin "daisyui/theme" {
+  name: "stitches";
+  default: true;
+  color-scheme: light;
+
+  --color-base-100: #FFFCF6;        /* cards / raised surfaces        */
+  --color-base-200: #FAF4E9;        /* the canvas (page background)   */
+  --color-base-300: #EFE5D3;        /* hairlines, washes, dividers    */
+  --color-base-content: #4A3C33;    /* espresso ink                   */
+
+  --color-primary: #8CCAEE;         /* Cece blue                      */
+  --color-primary-content: #103C58; /* deep marine on blue            */
+  --color-secondary: #CDA9E3;       /* lilac                          */
+  --color-secondary-content: #4E2B66;
+  --color-accent: #9ADDB6;          /* mint                           */
+  --color-accent-content: #14523A;
+  --color-neutral: #4A3C33;
+  --color-neutral-content: #FFFCF6;
+
+  --color-info: #1F6592;            /* deep blue — links, focus       */
+  --color-info-content: #FFFCF6;
+  --color-success: #237A4C;
+  --color-success-content: #FFFCF6;
+  --color-warning: #8A6A0E;
+  --color-warning-content: #FFFCF6;
+  --color-error: #A63E14;           /* coral-deep — destructive       */
+  --color-error-content: #FFFCF6;
+
+  --radius-selector: 1rem;
+  --radius-field: 2rem;             /* pill buttons & inputs          */
+  --radius-box: 1.5rem;             /* cards & sheets                 */
+  --border: 1.5px;
+  --depth: 1;                        /* daisyUI soft dimensionality — this is our "juice", not blur */
+  --noise: 0;
+}
+
+/* ── The moonlit counter (counter screen subtree only) ──── */
+@plugin "daisyui/theme" {
+  name: "stitchesdim";
+  color-scheme: dark;
+
+  --color-base-100: #1B2740;
+  --color-base-200: #141D31;
+  --color-base-300: #0E1526;
+  --color-base-content: #E9EFF7;
+
+  --color-primary: #9AD2F3;
+  --color-primary-content: #0C2A40;
+  --color-accent: #8FDDB4;
+  --color-accent-content: #0F3D2B;
+  --color-neutral: #E9EFF7;
+  --color-neutral-content: #141D31;
+  --color-error: #FFB48F;
+  --color-error-content: #4A1F0A;
+
+  --radius-selector: 1rem;
+  --radius-field: 2rem;
+  --radius-box: 1.5rem;
+  --border: 1.5px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@theme {
+  --font-sans: "Nunito", ui-rounded, system-ui, sans-serif;
+  --font-display: "Baloo 2", "Nunito", ui-rounded, system-ui, sans-serif;
+}
+
+:root {
+  /* Patch accents — tags, status chips, illustration fills */
+  --patch-blue-soft:   #DCEEF9;  --patch-blue:   #8CCAEE;  --patch-blue-deep:   #1F6592;
+  --patch-coral-soft:  #FFE0D1;  --patch-coral:  #FFB48F;  --patch-coral-deep:  #A63E14;
+  --patch-lilac-soft:  #F0E4F8;  --patch-lilac:  #CDA9E3;  --patch-lilac-deep:  #4E2B66;
+  --patch-mint-soft:   #DEF3E6;  --patch-mint:   #9ADDB6;  --patch-mint-deep:   #14523A;
+  --patch-butter-soft: #FBF0CC;  --patch-butter: #F6D97E;  --patch-butter-deep: #7A5D0B;
+
+  --ink-muted: #6E6152;           /* secondary text on cream */
+
+  --shadow-soft: 0 2px 10px rgb(74 60 51 / 0.08);   /* warm-tinted, never gray */
+  --shadow-lift: 0 8px 24px rgb(74 60 51 / 0.12);
+
+  --dur-quick: 150ms;
+  --dur-soft:  220ms;
+  --ease-pop:  cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}

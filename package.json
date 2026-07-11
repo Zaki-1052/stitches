@@ -1,0 +1,19 @@
+{
+  "name": "stitches",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": ["web", "importer"],
+  "engines": {
+    "node": "24.18.0"
+  },
+  "scripts": {
+    "dev": "bash scripts/dev.sh",
+    "lint": "npm run lint --workspace web",
+    "verify:contrast": "node scripts/verify/contrast.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "prettier": "3.9.5"
+  }
+}

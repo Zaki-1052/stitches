@@ -1,0 +1,9 @@
+{
+  "name": "@stitches/importer",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "echo 'importer is not built yet — see docs/PLAN.md Phase 3 (Session 3.1)'"
+  }
+}

@@ -1,0 +1,16 @@
+# stitches/.gitignore
+node_modules/
+dist/
+dist-ssr/
+*.local
+*.log
+.DS_Store
+.env*
+
+# PocketBase — binary and runtime data are fetched/created by scripts/dev.sh
+pb/pocketbase
+pb/*.zip
+pb/pb_data/
+
+# dev boot log (npm run dev 2>&1 | tee dev-boot.txt)
+dev-boot.txt
