@@ -1,0 +1,14 @@
+
+> stitches@0.0.0 dev
+> bash scripts/dev.sh
+
+
+> @stitches/web@0.0.0 dev
+> vite
+
+Error: failed to apply migration 1783819397_create_library_schema.js: deleteRule: Invalid rule. Raw error: invalid left operand "projects_via_pattern.id" - failed to load back relation field "projects_via_pattern" collection.
+
+  VITE v7.3.6  ready in 277 ms
+
+  ➜  Local:   http://127.0.0.1:5173/
+  ➜  press h + enter to show help
