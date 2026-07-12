@@ -10,6 +10,8 @@ import type { PatternFormValues } from '../lib/schema.ts'
 import { useToast } from '../features/shared/toast.tsx'
 import { usePattern } from '../features/patterns/queries.ts'
 import { useCreatePattern, useUpdatePattern } from '../features/patterns/mutations.ts'
+import { useCreateAttachment } from '../features/patterns/attachmentMutations.ts'
+import { useConsumePendingAttachmentImport } from '../features/patterns/pendingAttachmentImport.ts'
 import { buildPatternFormData } from '../features/patterns/formData.ts'
 import type { PatternImages } from '../features/patterns/formData.ts'
 import { PatternForm } from '../features/patterns/components/PatternForm.tsx'
@@ -32,6 +34,10 @@ export default function PatternFormPage() {
   const patternQuery = usePattern(id)
   const createPattern = useCreatePattern()
   const updatePattern = useUpdatePattern()
+  const createAttachment = useCreateAttachment()
+  // Consumed unconditionally (rules of hooks); only the create path uses it, and an edit-page
+  // mount simply discards an abandoned pick.
+  const pendingImport = useConsumePendingAttachmentImport()
 
   const title = mode === 'create' ? 'new pattern' : 'edit pattern'
 
@@ -73,7 +79,25 @@ export default function PatternFormPage() {
     const body = buildPatternFormData(values, images, mode, user.id)
     if (mode === 'create') {
       const created = await createPattern.mutateAsync(body)
-      toast('Pattern saved ♡', 'success')
+      // File-first door: the pattern exists now, so an attachment failure must not look like a
+      // failed save — surface it loudly and land on the detail page, where the vault card is
+      // the retry path.
+      if (pendingImport) {
+        const fd = new FormData()
+        fd.append('owner', user.id)
+        fd.append('pattern', created.id)
+        fd.append('label', pendingImport.attachmentLabel)
+        fd.append('files', pendingImport.attachmentFile)
+        try {
+          await createAttachment.mutateAsync(fd)
+          toast('Pattern saved ♡', 'success')
+        } catch (err) {
+          console.error('[quick-add] attachment create failed', err)
+          toast("Pattern saved, but the file didn't attach — add it again from here.", 'error')
+        }
+      } else {
+        toast('Pattern saved ♡', 'success')
+      }
       navigate(`/patterns/${created.id}`, { replace: true })
     } else {
       await updatePattern.mutateAsync({ id, body })
@@ -82,12 +106,18 @@ export default function PatternFormPage() {
     }
   }
 
+  const createDefaults = pendingImport
+    ? { ...patternFormDefaults, title: pendingImport.suggestedTitle }
+    : patternFormDefaults
+
   return (
     <Frame title={title}>
       <PatternForm
         mode={mode}
-        defaultValues={record ? patternToFormValues(record) : patternFormDefaults}
+        defaultValues={record ? patternToFormValues(record) : createDefaults}
         record={record}
+        initialThumbnail={mode === 'create' ? (pendingImport?.thumbnail ?? undefined) : undefined}
+        pendingAttachmentLabel={mode === 'create' ? pendingImport?.attachmentLabel : undefined}
         onSubmit={handleSubmit}
         onCancel={goBack}
       />

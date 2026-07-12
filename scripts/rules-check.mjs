@@ -113,6 +113,30 @@ async function expectListEmpty(label, client, collection) {
   }
 }
 
+// Raw fetches against Protected file URLs (Session 1.3): PB re-checks the view rule on every
+// file request, so a denial surfaces as a non-200 response (404), not an SDK error.
+async function expectFileOk(label, url) {
+  try {
+    const res = await fetch(url)
+    await res.arrayBuffer() // drain the body either way
+    if (res.ok) pass(label)
+    else fail(label, `expected 200, got ${res.status}`)
+  } catch (err) {
+    fail(label, `fetch threw: ${err}`)
+  }
+}
+
+async function expectFileDenied(label, url) {
+  try {
+    const res = await fetch(url)
+    await res.arrayBuffer()
+    if (res.ok) fail(label, `expected a denial status, got ${res.status}`)
+    else pass(label)
+  } catch (err) {
+    fail(label, `fetch threw: ${err}`)
+  }
+}
+
 // ---------------------------------------------------------------------------
 // sweep — remove leftover fixtures from a crashed previous run (idempotency).
 // Children before parents, and projects unlink their pattern first, so leftovers
@@ -295,6 +319,46 @@ await expectOk('A updates attachment resending unchanged pattern (:changed lock 
 await expectDenied('A re-parents attachment to another own pattern (:changed lock)', () =>
   a.collection('pattern_attachments').update(attachmentA.id, { pattern: patternPrivA.id }),
 )
+
+console.log('· pattern_attachments — protected file access (the token gate, Session 1.3)')
+// Minimal-but-sniffable PDF: enough structure for content-type detection. It is only ever
+// stored and fetched raw — nothing parses it. Cleanup rides the existing phase-3 cascade
+// (this attachment dies with patternSharedA), so the ×2 idempotent run stays intact.
+const scanBytes = Buffer.from(
+  '%PDF-1.1\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n' +
+    '2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n' +
+    '3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 3 3]>>endobj\n' +
+    'trailer<</Root 1 0 R>>\n%%EOF\n',
+)
+const scanFd = new FormData()
+scanFd.append('owner', aId)
+scanFd.append('pattern', patternSharedA.id)
+scanFd.append('label', `${MARK} vintage scan (A)`)
+scanFd.append('files', new Blob([scanBytes], { type: 'application/pdf' }), 'vintage-scan.pdf')
+const attachmentFileA = await expectOk('A creates attachment with a real file', () =>
+  a.collection('pattern_attachments').create(scanFd),
+)
+if (attachmentFileA) {
+  const scanFilename = attachmentFileA.files[0]
+  await expectFileDenied(
+    'fetch protected file with NO token → denied',
+    a.files.getURL(attachmentFileA, scanFilename),
+  )
+  const tokenB = await expectOk('B gets a file token of their own', () => b.files.getToken())
+  if (tokenB) {
+    await expectFileDenied(
+      "fetch protected file with B's token → denied (view rule re-checked per fetch)",
+      a.files.getURL(attachmentFileA, scanFilename, { token: tokenB }),
+    )
+  }
+  const tokenA = await expectOk('A gets a file token', () => a.files.getToken())
+  if (tokenA) {
+    await expectFileOk(
+      "fetch protected file with A's token → 200 (owner playback)",
+      a.files.getURL(attachmentFileA, scanFilename, { token: tokenA }),
+    )
+  }
+}
 
 console.log('· projects')
 await expectListed('B lists A shared project', b, 'projects', projectSharedA.id)

@@ -39,9 +39,11 @@ function ToolbarButton({
 export function NotesEditor({
   value,
   onChange,
+  ariaLabel = 'Notes',
 }: {
   value: string
   onChange: (html: string) => void
+  ariaLabel?: string
 }) {
   const editor = useEditor({
     extensions: [
@@ -55,7 +57,7 @@ export function NotesEditor({
     ],
     content: value,
     editorProps: {
-      attributes: { class: 'rich-text px-4 py-3', 'aria-label': 'Notes' },
+      attributes: { class: 'rich-text px-4 py-3', 'aria-label': ariaLabel },
     },
     onUpdate: ({ editor: current }) => {
       onChange(current.isEmpty ? '' : current.getHTML())

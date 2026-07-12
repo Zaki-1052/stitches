@@ -1,8 +1,8 @@
 // web/src/routes/PatternDetailPage.tsx — /patterns/:id (DESIGN §9): hero, source chip, shelf
-// pill (owner-only quick mutation), meta chips, tags, sanitized notes, photo strip, visibility
-// toggle, delete. A friend's shared pattern renders read-only — no edit/delete/shelf/visibility
-// affordances, and nothing hints at attachments (that card is Session 1.3, owner-only by rule).
-// The projects-on-this-pattern section waits for Session 2.1, when projects exist to link to.
+// pill (owner-only quick mutation), meta chips, tags, sanitized notes, photo strip, attachments
+// vault (owner-only), visibility toggle, delete. A friend's shared pattern renders read-only —
+// no edit/delete/shelf/visibility affordances, and nothing hints at attachments (owner-only by
+// rule; the card simply never mounts). The projects-on-this-pattern section waits for 2.1.
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import DOMPurify from 'dompurify'
@@ -21,6 +21,7 @@ import { MetaChips } from '../features/patterns/components/MetaChips.tsx'
 import { ShelfPill } from '../features/patterns/components/ShelfPill.tsx'
 import { VisibilityToggle } from '../features/patterns/components/VisibilityToggle.tsx'
 import { DeleteConfirmDialog } from '../features/patterns/components/DeleteConfirmDialog.tsx'
+import { AttachmentsCard } from '../features/patterns/components/AttachmentsCard.tsx'
 
 function Frame({ right, children }: { right?: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -233,6 +234,8 @@ export default function PatternDetailPage() {
             </div>
           </section>
         )}
+
+        {isOwner && <AttachmentsCard pattern={pattern} />}
 
         {isOwner && (
           <>

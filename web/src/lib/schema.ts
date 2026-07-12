@@ -93,6 +93,20 @@ export interface ProjectLinkRecord {
   status: string
 }
 
+// The copyright vault (SPEC §7 pattern_attachments): one record per uploaded file (label =
+// original filename), plus at most one text-only record carrying pattern_text. `files` entries
+// are Protected — URLs only work with a short-lived token (features/shared/protectedFiles.ts).
+export interface AttachmentRecord {
+  id: string
+  owner: string
+  pattern: string
+  label: string
+  files: string[]
+  pattern_text: string
+  created: string
+  updated: string
+}
+
 // ---- Form schemas ----
 
 const numberString = (message: string) => z.string().regex(/^(\d+(\.\d+)?)?$/, message)

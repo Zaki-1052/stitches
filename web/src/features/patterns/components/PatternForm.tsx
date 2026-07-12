@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Paperclip } from 'lucide-react'
 import { pb } from '../../../lib/pb.ts'
 import {
   CRAFTS,
@@ -20,6 +21,7 @@ import type { PatternFormValues, PatternRecord } from '../../../lib/schema.ts'
 import { CYC_LABELS } from '../../../lib/cyc.ts'
 import { applyFieldErrors, normalizePbError } from '../../shared/errors.ts'
 import { useToast } from '../../shared/toast.tsx'
+import type { ProcessedImage } from '../../shared/imagePipeline.ts'
 import type { PatternImages, PhotosState, ThumbnailState } from '../formData.ts'
 import { HookAliasReadout } from './HookAliasReadout.tsx'
 import { NotesEditor } from './NotesEditor.tsx'
@@ -53,12 +55,18 @@ export function PatternForm({
   mode,
   defaultValues,
   record,
+  initialThumbnail,
+  pendingAttachmentLabel,
   onSubmit,
   onCancel,
 }: {
   mode: 'create' | 'edit'
   defaultValues: PatternFormValues
   record?: PatternRecord
+  // Quick-add file door (Session 1.3): a pre-generated thumbnail and the name of the file that
+  // will be vaulted on save. Both flow through the normal ThumbnailState/FormData mechanics.
+  initialThumbnail?: ProcessedImage
+  pendingAttachmentLabel?: string
   onSubmit: (values: PatternFormValues, images: PatternImages) => Promise<void>
   onCancel: () => void
 }) {
@@ -72,7 +80,9 @@ export function PatternForm({
     formState: { errors, isSubmitting },
   } = useForm<PatternFormValues>({ resolver: zodResolver(patternFormSchema), defaultValues })
 
-  const [thumbnail, setThumbnail] = useState<ThumbnailState>({ kind: 'unchanged' })
+  const [thumbnail, setThumbnail] = useState<ThumbnailState>(
+    initialThumbnail ? { kind: 'new', image: initialThumbnail } : { kind: 'unchanged' },
+  )
   const [photos, setPhotos] = useState<PhotosState>({
     existing: record?.photos ?? [],
     removed: [],
@@ -121,6 +131,13 @@ export function PatternForm({
           onChange={setThumbnail}
           onBusyChange={setThumbnailBusy}
         />
+
+        {pendingAttachmentLabel && (
+          <p className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--ink-muted)' }}>
+            <Paperclip size={16} strokeWidth={2} aria-hidden="true" />
+            <span>Will attach “{pendingAttachmentLabel}” when you save.</span>
+          </p>
+        )}
 
         <Field label="Craft" error={errors.craft?.message}>
           <select className="select select-lg w-full" {...register('craft')}>
