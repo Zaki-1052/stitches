@@ -13,3 +13,6 @@ SPEC/DESIGN (per the PLAN.md session ritual).
 - 2026-07-10 · `@types/node` pinned 24.13.3 · npm's `latest` tag tracks Node 26, not our pinned 24.
 - 2026-07-10 · PocketBase v0.39.6 pinned in `scripts/dev.sh`; binary + `pb_data/` gitignored, downloaded on first `npm run dev`.
 - 2026-07-10 · DESIGN §3 chip-contrast prose corrected with measured ratios (soft/deep 5.07–9.22:1, espresso-on-core 5.23–7.63:1) · the draft's "≈9:1" claim only holds for lilac; all pairs pass AA.
+- 2026-07-11 · Login wordmark is lowercase `stitches` (Baloo 2 700) · resolves the DESIGN §9 ("Stitches") vs §14 (lowercase wordmark everywhere) conflict in favor of §14's more specific typographic rule.
+- 2026-07-11 · `lucide-react` pinned 1.24.0 (post-AI-knowledge 1.x major); icon names verified against the installed package — the `Home` icon is now `House` · never trust remembered 0.x lucide names; grep the package's `.d.ts` first.
+- 2026-07-11 · Session 0.2 deps pinned: `pocketbase` 0.27.0, `react-hook-form` 7.81.0, `zod` 4.4.3, `@hookform/resolvers` 5.4.0 (zodResolver accepts zod 4 via standard-schema) · SPEC §5 stack, exact pins per `.npmrc`.

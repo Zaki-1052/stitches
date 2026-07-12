@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "bash scripts/dev.sh",
     "lint": "npm run lint --workspace web",
+    "seed": "node scripts/seed.mjs",
     "verify:contrast": "node scripts/verify/contrast.mjs"
   },
   "devDependencies": {

@@ -6,10 +6,10 @@ VPS in a late phase; until then everything is local.
 
 ## Read first, every session
 
-1. `docs/PLAN.md` — build phases; execute exactly **one** session brief per sitting
-2. `docs/SPEC.md` — architecture (**binding**)
-3. `docs/DESIGN.md` — visual system (**binding**)
-4. `docs/DECISIONS.md` — decisions log; append one line whenever a session deviates from SPEC/DESIGN
+1. `@docs/PLAN.md` — build phases; execute exactly **one** session brief per sitting
+2. `@docs/SPEC.md` — architecture (**binding**)
+3. `@docs/DESIGN.md` — visual system (**binding**)
+4. `@docs/DECISIONS.md` — decisions log; append one line whenever a session deviates from SPEC/DESIGN
 5. `docs/handoff.md` — original PRD (background)
 
 State a short plan, then build. If anything is ambiguous or contradicts the docs,

@@ -1,0 +1,36 @@
+/* web/src/styles/base.css — global iOS hygiene (DESIGN §12/§13). Behaviour only, no colors or
+   fonts: theme.css remains the single source of truth for those. Loaded after theme.css. */
+
+/* -webkit-tap-highlight-color inherits; set it once so we ship our own pressed states (§12 #7). */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* No double-tap-zoom surprises on interactive elements (§12 #6). */
+a,
+button,
+input,
+select,
+textarea,
+label,
+[role='button'] {
+  touch-action: manipulation;
+}
+
+/* Visible focus ring for keyboard users (§13): 2px patch-blue-deep, 2px offset. */
+:focus-visible {
+  outline: 2px solid var(--patch-blue-deep);
+  outline-offset: 2px;
+}
+
+/* Honor reduced-motion globally (§7/§13) — animate nothing meaningful for those who opt out. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

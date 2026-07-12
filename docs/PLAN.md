@@ -37,9 +37,9 @@ binary and starts PB + Vite together (Vite proxy for `/api`, `/_`, `/import`); a
 `/tokens` demo route rendering swatches, chips, buttons, and a `stitchesdim` panel; root
 `CLAUDE.md` distilling the agreements + doc pointers.
 **Accept:**
-- [ ] `npm run dev` boots Vite + local PB; `/tokens` renders both themes correctly
-- [ ] Every text/background pair from DESIGN §3 passes AA in a contrast checker; results noted in the PR/commit
-- [ ] Exact dependency versions pinned; lint clean; `CLAUDE.md` and `docs/DECISIONS.md` exist
+- [x] `npm run dev` boots Vite + local PB; `/tokens` renders both themes correctly
+- [x] Every text/background pair from DESIGN §3 passes AA in a contrast checker; results noted in the PR/commit
+- [x] Exact dependency versions pinned; lint clean; `CLAUDE.md` and `docs/DECISIONS.md` exist
 
 ### Session 0.2 — Auth & app shell
 **Goal:** log in, land in a themed shell, on a real phone.
