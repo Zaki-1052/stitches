@@ -65,8 +65,8 @@ private per user); `scripts/rules-check.mjs` — exercises the access matrix (an
 other-user) against every collection, including "attachments invisible to a friend even when the
 pattern is shared."
 **Accept:**
-- [ ] Migrations apply cleanly to a fresh `pb_data`
-- [ ] `rules-check.mjs` green across the full matrix — this script is now a permanent regression test
+- [x] Migrations apply cleanly to a fresh `pb_data`
+- [x] `rules-check.mjs` green across the full matrix — this script is now a permanent regression test
 
 ### Session 1.2 — Pattern CRUD
 **Goal:** Stitches works as Cece's manual-entry library.

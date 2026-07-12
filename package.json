@@ -10,8 +10,10 @@
   "scripts": {
     "dev": "bash scripts/dev.sh",
     "lint": "npm run lint --workspace web",
-    "seed": "node scripts/seed.mjs",
-    "verify:contrast": "node scripts/verify/contrast.mjs"
+    "seed": "node --env-file-if-missing=.env scripts/seed.mjs",
+    "verify:contrast": "node scripts/verify/contrast.mjs",
+    "verify:rules": "node --env-file-if-missing=.env scripts/rules-check.mjs",
+    "verify:fresh": "bash scripts/verify-fresh.sh"
   },
   "devDependencies": {
     "@types/node": "24.13.3",

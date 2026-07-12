@@ -1,7 +1,9 @@
-// scripts/seed.mjs — seed the two demo users for local dev (Session 0.2).
-// The `users` createRule is locked (the invite gate), so we authenticate as a superuser first and
-// create the accounts through the admin API. Every credential comes from an env var — nothing is
-// hardcoded. Idempotent: existing users are skipped. Fails loudly; no fallbacks.
+// scripts/seed.mjs — seed local dev data. Session 0.2: the two demo users (the `users`
+// createRule is locked — the invite gate — so accounts go through a superuser). Session 1.1:
+// each user's starter library — tags covering all five accent colors and six patterns
+// (each user gets at least one friends-visible and one private), created while authenticated
+// AS that user so the seed itself exercises the create rules. Every credential comes from an
+// env var — nothing is hardcoded. Idempotent: existing records are skipped. Fails loudly.
 import PocketBase from 'pocketbase'
 
 const PB_URL = process.env.PB_URL || 'http://127.0.0.1:8090'
@@ -78,4 +80,178 @@ for (const user of demoUsers) {
   }
 }
 
-console.log(`seed: done — ${created} created, ${demoUsers.length - created} skipped`)
+console.log(`seed: users done — ${created} created, ${demoUsers.length - created} skipped`)
+
+// ---------------------------------------------------------------------------
+// Session 1.1: starter library — tags covering all five accent colors and six
+// patterns (each user: ≥1 friends-visible + ≥1 private). Created as each user.
+// ---------------------------------------------------------------------------
+
+const libraries = [
+  {
+    email: required.SEED_USER1_EMAIL,
+    password: required.SEED_USER1_PASSWORD,
+    tags: [
+      { name: 'amigurumi', color: 'coral' },
+      { name: 'wearables', color: 'blue' },
+      { name: 'gifts', color: 'butter' },
+    ],
+    patterns: [
+      {
+        title: 'Bee Amigurumi',
+        visibility: 'friends',
+        craft: 'crochet',
+        yarn_weight: 'cyc_2',
+        hook_mm: 3.5,
+        difficulty: 'easy',
+        shelf: 'saved',
+        designer: 'Junie Makes',
+        source_name: 'Ravelry',
+        gauge: '6 sc = 1 in on 3.5 mm',
+        yardage: 40,
+        tags: ['amigurumi', 'gifts'],
+        notes: '<p>Chenille yarn makes the fuzziest bee. Safety eyes before stuffing!</p>',
+      },
+      {
+        title: 'Granny Square Cardigan',
+        visibility: 'private',
+        craft: 'crochet',
+        yarn_weight: 'cyc_4',
+        hook_mm: 5,
+        difficulty: 'intermediate',
+        shelf: 'want_to_make',
+        source_name: "Grandma's binder",
+        gauge: 'one square = 4 in on 5.0 mm',
+        yardage: 1200,
+        yardage_max: 1500,
+        tags: ['wearables'],
+        notes: '<p>Size up for the oversized look. Join-as-you-go saves so much sewing.</p>',
+      },
+      {
+        title: 'Mushroom Keychain',
+        visibility: 'friends',
+        craft: 'crochet',
+        yarn_weight: 'cyc_2',
+        hook_mm: 3,
+        difficulty: 'beginner',
+        shelf: 'queued',
+        gauge: 'tight — stuffing must not show',
+        yardage: 25,
+        tags: ['amigurumi', 'gifts'],
+      },
+    ],
+  },
+  {
+    email: required.SEED_USER2_EMAIL,
+    password: required.SEED_USER2_PASSWORD,
+    tags: [
+      { name: 'blankets', color: 'mint' },
+      { name: 'quick wins', color: 'lilac' },
+    ],
+    patterns: [
+      {
+        title: 'Ripple Blanket',
+        visibility: 'friends',
+        craft: 'crochet',
+        yarn_weight: 'cyc_4',
+        hook_mm: 5.5,
+        difficulty: 'easy',
+        shelf: 'saved',
+        source_name: 'Ravelry',
+        gauge: '14 dc × 8 rows = 4 in',
+        yardage: 900,
+        yardage_max: 1100,
+        tags: ['blankets'],
+        notes: '<p>Count the valleys, not the peaks.</p>',
+      },
+      {
+        title: 'Cotton Dishcloth',
+        visibility: 'private',
+        craft: 'crochet',
+        yarn_weight: 'cyc_3',
+        hook_mm: 4,
+        difficulty: 'beginner',
+        shelf: 'saved',
+        yardage: 60,
+        tags: ['quick wins'],
+      },
+      {
+        title: 'Star Coaster',
+        visibility: 'private',
+        craft: 'crochet',
+        yarn_weight: 'cyc_2',
+        hook_mm: 3.5,
+        difficulty: 'easy',
+        shelf: 'queued',
+        yardage: 30,
+        tags: ['quick wins'],
+      },
+    ],
+  },
+]
+
+// Look up by the same key the schema's unique/ownership semantics use; 404 means "create it".
+async function ensureRecord(client, collection, filter, data, label) {
+  try {
+    await client.collection(collection).getFirstListItem(filter)
+    console.log(`SKIP  ${label} (already exists)`)
+    return false
+  } catch (err) {
+    if (err?.status !== 404) {
+      console.error(`FAIL  ${label}: unexpected lookup error`)
+      console.error(err)
+      process.exit(1)
+    }
+    await client.collection(collection).create(data)
+    console.log(`OK    ${label} (created)`)
+    return true
+  }
+}
+
+for (const library of libraries) {
+  const client = new PocketBase(PB_URL)
+  try {
+    await client.collection('users').authWithPassword(library.email, library.password)
+  } catch (err) {
+    console.error(`seed: auth as ${library.email} failed — were the demo users just created above?`)
+    console.error(err)
+    process.exit(1)
+  }
+  const me = client.authStore.record.id
+
+  for (const tag of library.tags) {
+    await ensureRecord(
+      client,
+      'tags',
+      client.filter('owner = {:me} && name = {:name}', { me, name: tag.name }),
+      { owner: me, name: tag.name, color: tag.color },
+      `tag “${tag.name}” (${library.email})`,
+    )
+  }
+
+  // Tag ids by name, for the patterns' relation field.
+  const myTags = await client.collection('tags').getFullList({
+    filter: client.filter('owner = {:me}', { me }),
+  })
+  const tagIdsByName = Object.fromEntries(myTags.map((tag) => [tag.name, tag.id]))
+
+  for (const pattern of library.patterns) {
+    const tagIds = (pattern.tags ?? []).map((name) => {
+      const id = tagIdsByName[name]
+      if (!id) {
+        console.error(`seed: pattern “${pattern.title}” references unknown tag “${name}”`)
+        process.exit(1)
+      }
+      return id
+    })
+    await ensureRecord(
+      client,
+      'patterns',
+      client.filter('owner = {:me} && title = {:title}', { me, title: pattern.title }),
+      { ...pattern, owner: me, tags: tagIds },
+      `pattern “${pattern.title}” (${library.email})`,
+    )
+  }
+}
+
+console.log('seed: library done')
