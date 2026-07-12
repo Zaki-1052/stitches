@@ -4,8 +4,9 @@
 // fall back to Home. Tops out at the iOS status-bar safe area.
 import { ChevronLeft } from 'lucide-react'
 import { useNavigate } from 'react-router'
+import type { ReactNode } from 'react'
 
-export function BackBar({ title }: { title?: string }) {
+export function BackBar({ title, right }: { title?: string; right?: ReactNode }) {
   const navigate = useNavigate()
 
   const goBack = () => {
@@ -28,6 +29,7 @@ export function BackBar({ title }: { title?: string }) {
         <ChevronLeft size={24} strokeWidth={2} />
       </button>
       {title && <h1 className="font-display text-xl font-bold lowercase">{title}</h1>}
+      {right && <div className="ml-auto flex items-center gap-1">{right}</div>}
     </div>
   )
 }

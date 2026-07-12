@@ -1,0 +1,37 @@
+/* web/src/styles/richtext.css — typography for PB `editor` (rich text) content: the TipTap
+   notes editor and the sanitized notes render on pattern detail share this class. Structure
+   only — colors and fonts stay in theme.css. Tailwind's preflight strips list markers and
+   margins, so restore the handful rich text needs. */
+
+.rich-text {
+  font-size: 1rem; /* ≥16px input floor, DESIGN §12 #5 */
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.rich-text p,
+.rich-text ul,
+.rich-text ol {
+  margin-bottom: 0.5rem;
+}
+
+.rich-text > :last-child {
+  margin-bottom: 0;
+}
+
+.rich-text ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+
+.rich-text ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+
+/* The editable variant fills its input-shaped wrapper; the wrapper carries the visible focus
+   ring (via :focus-within), so the contenteditable's own outline would double up. */
+.rich-text[contenteditable] {
+  min-height: 7rem;
+  outline: none;
+}

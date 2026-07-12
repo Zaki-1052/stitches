@@ -4,6 +4,8 @@ import { createRoot } from 'react-dom/client'
 import { createBrowserRouter } from 'react-router'
 import { RouterProvider } from 'react-router/dom'
 
+import { QueryClientProvider } from '@tanstack/react-query'
+
 import '@fontsource/baloo-2/600.css'
 import '@fontsource/baloo-2/700.css'
 import '@fontsource/nunito/400.css'
@@ -11,13 +13,18 @@ import '@fontsource/nunito/600.css'
 import '@fontsource/nunito/700.css'
 import './styles/theme.css'
 import './styles/base.css'
+import './styles/richtext.css'
 
 import { AuthProvider } from './lib/auth.tsx'
+import { queryClient } from './features/shared/queryClient.ts'
+import { ToastProvider } from './features/shared/toast.tsx'
 import { ProtectedRoute } from './components/ProtectedRoute.tsx'
 import { AppShell } from './components/AppShell.tsx'
 import LoginPage from './routes/LoginPage.tsx'
 import HomePage from './routes/HomePage.tsx'
-import LibraryStub from './routes/LibraryStub.tsx'
+import LibraryPage from './routes/LibraryPage.tsx'
+import PatternDetailPage from './routes/PatternDetailPage.tsx'
+import PatternFormPage from './routes/PatternFormPage.tsx'
 import ProjectsStub from './routes/ProjectsStub.tsx'
 import SettingsStub from './routes/SettingsStub.tsx'
 import TokensPage from './routes/TokensPage.tsx'
@@ -32,11 +39,16 @@ const router = createBrowserRouter([
         element: <AppShell />,
         children: [
           { index: true, element: <HomePage /> },
-          { path: 'patterns', element: <LibraryStub /> },
+          { path: 'patterns', element: <LibraryPage /> },
           { path: 'projects', element: <ProjectsStub /> },
           { path: 'tokens', element: <TokensPage /> },
         ],
       },
+      // Dockless pushed subpages (the /settings BackBar pattern). The static 'new' segment
+      // outranks ':id' in React Router's matching, so /patterns/new never hits the detail route.
+      { path: '/patterns/new', element: <PatternFormPage /> },
+      { path: '/patterns/:id', element: <PatternDetailPage /> },
+      { path: '/patterns/:id/edit', element: <PatternFormPage /> },
       { path: '/settings', element: <SettingsStub /> },
     ],
   },
@@ -44,8 +56,12 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <ToastProvider>
+          <RouterProvider router={router} />
+        </ToastProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   </StrictMode>,
 )

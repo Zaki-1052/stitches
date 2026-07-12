@@ -1,8 +1,8 @@
 // web/src/components/Dock.tsx — bottom navigation (DESIGN §8). daisyUI `dock` (fixed, safe-area
 // aware) with a raised 56px center "+" (blue circle, espresso plus). Slots: Home · Library · ➕ ·
-// Projects; Friends joins as a 5th in the sharing phase. The quick-add sheet behind ➕ lands in
-// Phase 1 — the raised affordance ships now.
-import { NavLink } from 'react-router'
+// Projects; Friends joins as a 5th in the sharing phase. ➕ goes straight to manual entry until
+// the multi-door quick-add sheet exists (file door 1.3, link door 3.2) — Zara-approved interim.
+import { NavLink, useNavigate } from 'react-router'
 import { House, Library, FolderHeart, Plus } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -26,16 +26,13 @@ function DockTab({
 }
 
 export function Dock() {
+  const navigate = useNavigate()
   return (
     <nav className="dock" style={{ background: 'var(--color-base-100)' }}>
       <DockTab to="/" label="Home" icon={House} end />
       <DockTab to="/patterns" label="Library" icon={Library} />
 
-      <button
-        type="button"
-        aria-label="Add"
-        onClick={() => console.info('[dock] quick-add sheet arrives in Phase 1')}
-      >
+      <button type="button" aria-label="Add a pattern" onClick={() => navigate('/patterns/new')}>
         <span
           className="grid size-14 -translate-y-4 place-items-center rounded-full"
           style={{

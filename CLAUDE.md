@@ -53,9 +53,23 @@ Never bump a major "helpfully"; a real upgrade means reading migration notes fir
 
 ```
 npm run dev              # Zara runs: PocketBase :8090 + Vite :5173 (downloads PB binary on first run)
+npm run verify:fresh     # Zara runs: fresh-pb_data proof — boot PB alone → migrations → superuser → seed → rules-check ×2
+npm run seed             # Zara runs: demo users + starter library (idempotent; PB must be running)
+npm run verify:rules     # Zara runs: SPEC §7 access-matrix regression test (~99 checks) against the running PB
 npm run lint             # Claude may run: eslint over web/
 npm run verify:contrast  # Claude may run: WCAG AA gate over all token pairs
 ```
+
+Credentials live in `.env` (gitignored; template `.env.example`) and are auto-loaded by
+seed/verify scripts — never ask Zara to `export` variables, never hardcode a credential.
+
+**Regression gate:** any session that touches `pb_migrations`, API rules, or seed data ends
+with Zara re-running `npm run verify:rules` (or `verify:fresh` if migrations changed) green.
+`scripts/rules-check.mjs` is self-contained (two demo-user creds, no superuser, cleans up its
+`[rules-check]` fixtures) and later runs against prod. PB gotchas already learned the hard way
+are logged in `docs/DECISIONS.md` (2026-07-11) — e.g. no schema-level field defaults, deletes
+only block on *required* relation refs, rules can't reference a back-relation whose collection
+doesn't exist yet (set such rules in a second `app.save()`).
 
 ## Session Logging
 
