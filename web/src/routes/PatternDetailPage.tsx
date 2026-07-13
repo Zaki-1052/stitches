@@ -1,12 +1,13 @@
 // web/src/routes/PatternDetailPage.tsx — /patterns/:id (DESIGN §9): hero, source chip, shelf
-// pill (owner-only quick mutation), meta chips, tags, sanitized notes, photo strip, attachments
-// vault (owner-only), visibility toggle, delete. A friend's shared pattern renders read-only —
-// no edit/delete/shelf/visibility affordances, and nothing hints at attachments (owner-only by
-// rule; the card simply never mounts). The projects-on-this-pattern section waits for 2.1.
+// pill (owner-only quick mutation), meta chips, tags, sanitized notes, photo strip, projects
+// section (+ owner-only "Start a project"), attachments vault (owner-only), visibility toggle,
+// delete. A friend's shared pattern renders read-only — no edit/delete/shelf/visibility
+// affordances, and nothing hints at attachments (owner-only by rule; the card simply never
+// mounts). Friends starting their own project off a shared pattern waits for Phase 4.
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import DOMPurify from 'dompurify'
-import { ExternalLink, Pencil } from 'lucide-react'
+import { ExternalLink, Pencil, Plus } from 'lucide-react'
 import { BackBar } from '../components/BackBar.tsx'
 import { YarnBall } from '../components/YarnBall.tsx'
 import { pb } from '../lib/pb.ts'
@@ -15,7 +16,9 @@ import type { PatternRecord, Shelf, Visibility } from '../lib/schema.ts'
 import { useToast } from '../features/shared/toast.tsx'
 import { normalizePbError } from '../features/shared/errors.ts'
 import { patchSwatch } from '../features/shared/patchColors.ts'
-import { useLinkedProjects, usePattern } from '../features/patterns/queries.ts'
+import { usePattern } from '../features/patterns/queries.ts'
+import { useLinkedProjects } from '../features/projects/queries.ts'
+import { StatusChip } from '../features/projects/components/StatusChip.tsx'
 import { useDeletePattern, useQuickUpdatePattern } from '../features/patterns/mutations.ts'
 import { MetaChips } from '../features/patterns/components/MetaChips.tsx'
 import { ShelfPill } from '../features/patterns/components/ShelfPill.tsx'
@@ -235,6 +238,39 @@ export default function PatternDetailPage() {
           </section>
         )}
 
+        {(isOwner || (linkedQuery.data?.length ?? 0) > 0) && (
+          <section className="flex flex-col gap-2">
+            <h2 className="font-display text-xl font-semibold">projects</h2>
+            {(linkedQuery.data?.length ?? 0) > 0 && (
+              <div
+                className="rounded-box flex flex-col bg-base-100 px-4 py-1"
+                style={{ boxShadow: 'var(--shadow-soft)' }}
+              >
+                {linkedQuery.data!.map((linked) => (
+                  <Link
+                    key={linked.id}
+                    to={`/projects/${linked.id}`}
+                    className="flex min-h-12 items-center justify-between gap-3"
+                  >
+                    <span className="min-w-0 flex-1 truncate font-semibold">{linked.name}</span>
+                    <StatusChip status={linked.status} />
+                  </Link>
+                ))}
+              </div>
+            )}
+            {isOwner && (
+              <Link
+                to={`/projects/new?pattern=${id}`}
+                className="rounded-box flex min-h-14 items-center justify-center gap-2 border-2 border-dashed text-sm font-semibold"
+                style={{ borderColor: 'var(--color-base-300)', color: 'var(--ink-muted)' }}
+              >
+                <Plus size={20} strokeWidth={2} aria-hidden="true" />
+                Start a project
+              </Link>
+            )}
+          </section>
+        )}
+
         {isOwner && <AttachmentsCard pattern={pattern} />}
 
         {isOwner && (
@@ -243,6 +279,7 @@ export default function PatternDetailPage() {
               value={pattern.visibility}
               onChange={setVisibility}
               disabled={quickUpdate.isPending}
+              helperText="Friends can see this pattern's info and photos — never your files."
             />
 
             <button

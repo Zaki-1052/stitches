@@ -25,7 +25,9 @@ import HomePage from './routes/HomePage.tsx'
 import LibraryPage from './routes/LibraryPage.tsx'
 import PatternDetailPage from './routes/PatternDetailPage.tsx'
 import PatternFormPage from './routes/PatternFormPage.tsx'
-import ProjectsStub from './routes/ProjectsStub.tsx'
+import ProjectsPage from './routes/ProjectsPage.tsx'
+import ProjectDetailPage from './routes/ProjectDetailPage.tsx'
+import ProjectFormPage from './routes/ProjectFormPage.tsx'
 import SettingsStub from './routes/SettingsStub.tsx'
 import TokensPage from './routes/TokensPage.tsx'
 
@@ -40,7 +42,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <HomePage /> },
           { path: 'patterns', element: <LibraryPage /> },
-          { path: 'projects', element: <ProjectsStub /> },
+          { path: 'projects', element: <ProjectsPage /> },
           { path: 'tokens', element: <TokensPage /> },
         ],
       },
@@ -49,6 +51,9 @@ const router = createBrowserRouter([
       { path: '/patterns/new', element: <PatternFormPage /> },
       { path: '/patterns/:id', element: <PatternDetailPage /> },
       { path: '/patterns/:id/edit', element: <PatternFormPage /> },
+      { path: '/projects/new', element: <ProjectFormPage /> },
+      { path: '/projects/:id', element: <ProjectDetailPage /> },
+      { path: '/projects/:id/edit', element: <ProjectFormPage /> },
       { path: '/settings', element: <SettingsStub /> },
     ],
   },

@@ -1,24 +1,27 @@
-// web/src/features/patterns/components/PhotosField.tsx — the ≤10 inspiration shots. Client
-// enforces the total cap (existing − removed + added) ahead of the server's field cap, shows a
-// live "N of 10", and per-file pipeline failures ("please convert this one") never block the
-// files that did decode. Removal of stored photos is by filename (PB's `photos-` modifier).
+// web/src/features/patterns/components/PhotosField.tsx — multi-photo picker (patterns' ≤10
+// inspiration shots; journal entries pass max=6). Client enforces the total cap (existing −
+// removed + added) ahead of the server's field cap, shows a live "N of max", and per-file
+// pipeline failures ("please convert this one") never block the files that did decode. Removal
+// of stored photos is by filename (PB's `photos-` modifier).
 import { useRef, useState } from 'react'
 import { ImagePlus, X } from 'lucide-react'
 import { processImages, revokePreview } from '../../shared/imagePipeline.ts'
 import type { PhotosState } from '../formData.ts'
-
-const MAX_PHOTOS = 10
 
 export function PhotosField({
   photos,
   onChange,
   onBusyChange,
   urlFor,
+  max = 10,
+  label = 'More photos',
 }: {
   photos: PhotosState
   onChange: (next: PhotosState) => void
   onBusyChange: (busy: boolean) => void
   urlFor: (filename: string) => string
+  max?: number
+  label?: string
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
@@ -26,14 +29,14 @@ export function PhotosField({
 
   const keptExisting = photos.existing.filter((name) => !photos.removed.includes(name))
   const total = keptExisting.length + photos.added.length
-  const remaining = MAX_PHOTOS - total
+  const remaining = max - total
 
   const handleFiles = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return
     const picked = Array.from(fileList)
     const usable = picked.slice(0, Math.max(0, remaining))
     const overflow = picked.length - usable.length
-    setErrors(overflow > 0 ? [`Only ${MAX_PHOTOS} photos fit — ${overflow} didn't make it in.`] : [])
+    setErrors(overflow > 0 ? [`Only ${max} photos fit — ${overflow} didn't make it in.`] : [])
     if (usable.length === 0) return
 
     setBusy(true)
@@ -63,9 +66,9 @@ export function PhotosField({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-baseline justify-between">
-        <span className="text-sm font-semibold">More photos</span>
+        <span className="text-sm font-semibold">{label}</span>
         <span className="text-xs" style={{ color: 'var(--ink-muted)' }}>
-          {total} of {MAX_PHOTOS}
+          {total} of {max}
         </span>
       </div>
 

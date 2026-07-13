@@ -6,7 +6,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { LayoutGrid, Rows3 } from 'lucide-react'
-import { useFinishedPatternIds, usePatterns, useTags } from '../features/patterns/queries.ts'
+import { usePatterns, useTags } from '../features/patterns/queries.ts'
+import { useFinishedPatternIds } from '../features/projects/queries.ts'
 import {
   EMPTY_FILTERS,
   hasAnyQuery,

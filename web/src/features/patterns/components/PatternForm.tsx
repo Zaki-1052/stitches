@@ -279,7 +279,12 @@ export function PatternForm({
         urlFor={(filename) => (record ? pb.files.getURL(record, filename, { thumb: '400x0' }) : '')}
       />
 
-      <SaveBar saving={isSubmitting} disabled={thumbnailBusy || photosBusy} onCancel={onCancel} />
+      <SaveBar
+        saving={isSubmitting}
+        disabled={thumbnailBusy || photosBusy}
+        onCancel={onCancel}
+        label="Save pattern"
+      />
     </form>
   )
 }

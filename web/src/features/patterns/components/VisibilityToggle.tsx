@@ -1,17 +1,20 @@
 // web/src/features/patterns/components/VisibilityToggle.tsx — owner-only sharing switch on the
-// pattern detail (DESIGN §9). Helper copy is verbatim and load-bearing: files (attachments) stay
-// structurally owner-only no matter what this toggle says. An unset visibility reads as private
-// (empty select never matches "friends" — DECISIONS 2026-07-11).
+// pattern and project detail pages (DESIGN §9). Helper copy comes from the caller, is verbatim
+// and load-bearing: attachments stay structurally owner-only and counters never render for
+// friends, no matter what this toggle says. An unset visibility reads as private (empty select
+// never matches "friends" — DECISIONS 2026-07-11).
 import type { Visibility } from '../../../lib/schema.ts'
 
 export function VisibilityToggle({
   value,
   onChange,
   disabled,
+  helperText,
 }: {
   value: Visibility | ''
   onChange: (next: Visibility) => void
   disabled?: boolean
+  helperText: string
 }) {
   const shared = value === 'friends'
   return (
@@ -30,7 +33,7 @@ export function VisibilityToggle({
         />
       </label>
       <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>
-        Friends can see this pattern's info and photos — never your files.
+        {helperText}
       </p>
     </div>
   )

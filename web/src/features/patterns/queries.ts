@@ -1,6 +1,6 @@
 // web/src/features/patterns/queries.ts — read-side hooks for the library (SPEC §12: all server
 // state in TanStack Query over the PB singleton). Keys are namespaced per collection; project
-// keys live under 'projects' so Session 2.1's status mutations can invalidate them later.
+// and journal reads live in features/projects/queries.ts.
 //
 // The Library hard-filters `owner = viewer` even though the PB list rule would also return
 // friends-shared records: this screen is *your* shelf; the Friends feed (Phase 4) is where
@@ -8,7 +8,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { pb } from '../../lib/pb.ts'
 import { useAuth } from '../../lib/auth.tsx'
-import type { PatternRecord, ProjectLinkRecord, TagRecord } from '../../lib/schema.ts'
+import type { PatternRecord, TagRecord } from '../../lib/schema.ts'
 import type { LibraryFilters } from './urlParams.ts'
 
 export const patternKeys = {
@@ -16,6 +16,8 @@ export const patternKeys = {
   lists: () => [...patternKeys.all, 'list'] as const,
   list: (viewerId: string, filters: LibraryFilters) =>
     [...patternKeys.lists(), viewerId, filters] as const,
+  // Nested under lists() so every existing pattern-mutation invalidation catches it too.
+  options: (viewerId: string) => [...patternKeys.lists(), 'options', viewerId] as const,
   details: () => [...patternKeys.all, 'detail'] as const,
   detail: (id: string) => [...patternKeys.details(), id] as const,
 }
@@ -23,14 +25,6 @@ export const patternKeys = {
 export const tagKeys = {
   all: ['tags'] as const,
   list: (viewerId: string) => [...tagKeys.all, 'list', viewerId] as const,
-}
-
-export const projectKeys = {
-  all: ['projects'] as const,
-  finishedPatternIds: (viewerId: string) =>
-    [...projectKeys.all, 'finishedPatternIds', viewerId] as const,
-  linkedToPattern: (patternId: string) =>
-    [...projectKeys.all, 'linkedToPattern', patternId] as const,
 }
 
 // OR-joins one filter template (`{:value}` placeholder) across a group's selected values —
@@ -87,34 +81,23 @@ export function useTags() {
   })
 }
 
-// SPEC §7.9 made-✓: a pattern counts as made when any *visible* project on it is finished.
-// Rules already scope "visible" to own + friends-shared; empty until Phase 2 builds projects.
-export function useFinishedPatternIds() {
+// Lean projection feeding the project form's pattern <select>.
+export interface PatternOption {
+  id: string
+  title: string
+}
+
+export function usePatternOptions() {
   const { user } = useAuth()
   const viewerId = user?.id ?? ''
   return useQuery({
-    queryKey: projectKeys.finishedPatternIds(viewerId),
+    queryKey: patternKeys.options(viewerId),
     enabled: viewerId !== '',
-    queryFn: async () => {
-      const rows = await pb.collection('projects').getFullList<ProjectLinkRecord>({
-        filter: 'status = "finished" && pattern != ""',
-        fields: 'id,pattern,status',
-      })
-      return new Set(rows.map((row) => row.pattern))
-    },
-  })
-}
-
-// Delete pre-check: viewer-visible projects still linked to this pattern. A friend's private
-// project can block deletion invisibly — the mutation's 400 fallback covers that case.
-export function useLinkedProjects(patternId: string) {
-  return useQuery({
-    queryKey: projectKeys.linkedToPattern(patternId),
-    enabled: patternId !== '',
     queryFn: () =>
-      pb.collection('projects').getFullList<ProjectLinkRecord>({
-        filter: pb.filter('pattern = {:id}', { id: patternId }),
-        fields: 'id,pattern,status',
+      pb.collection('patterns').getFullList<PatternOption>({
+        filter: pb.filter('owner = {:me}', { me: viewerId }),
+        fields: 'id,title',
+        sort: '-updated',
       }),
   })
 }

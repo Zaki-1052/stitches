@@ -22,6 +22,13 @@ export const YARN_WEIGHTS = [
 ] as const
 export const DIFFICULTIES = ['beginner', 'easy', 'intermediate', 'experienced'] as const
 export const SHELVES = ['saved', 'want_to_make', 'queued'] as const
+export const PROJECT_STATUSES = [
+  'planned',
+  'in_progress',
+  'finished',
+  'frogged',
+  'hibernating',
+] as const
 export const VISIBILITIES = ['private', 'friends'] as const
 export const TAG_COLORS = ['blue', 'coral', 'lilac', 'mint', 'butter'] as const
 
@@ -29,6 +36,7 @@ export type Craft = (typeof CRAFTS)[number]
 export type YarnWeight = (typeof YARN_WEIGHTS)[number]
 export type Difficulty = (typeof DIFFICULTIES)[number]
 export type Shelf = (typeof SHELVES)[number]
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number]
 export type Visibility = (typeof VISIBILITIES)[number]
 export type TagColor = (typeof TAG_COLORS)[number]
 
@@ -48,6 +56,13 @@ export const SHELF_LABELS: Record<Shelf, string> = {
   saved: 'saved',
   want_to_make: 'want to make',
   queued: 'queued',
+}
+export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
+  planned: 'planned',
+  in_progress: 'in progress',
+  finished: 'finished',
+  frogged: 'frogged',
+  hibernating: 'hibernating',
 }
 
 // ---- Record shapes as PB returns them (unset select = '', unset number = 0). ----
@@ -86,11 +101,44 @@ export interface PatternRecord {
   expand?: { tags?: TagRecord[] }
 }
 
-// Minimal projection used for the §7.9 made-✓ badge and the delete pre-check.
+// Minimal projection used for the §7.9 made-✓ badge, the delete pre-check, and the
+// pattern detail's projects section.
 export interface ProjectLinkRecord {
   id: string
   pattern: string
-  status: string
+  status: ProjectStatus | ''
+  name: string
+}
+
+export interface ProjectRecord {
+  id: string
+  owner: string
+  pattern: string
+  name: string
+  status: ProjectStatus | ''
+  started_on: string
+  finished_on: string
+  hook_mm: number
+  yarn_used: string
+  summary: string
+  cover: string
+  visibility: Visibility | ''
+  created: string
+  updated: string
+  expand?: { pattern?: PatternRecord }
+}
+
+// A project's diary line (SPEC §7): visibility inherited from the project; photos time-anchored
+// to the entry. `entry_date` is date-only and editable — backdating is a feature.
+export interface JournalEntryRecord {
+  id: string
+  owner: string
+  project: string
+  entry_date: string
+  body: string
+  photos: string[]
+  created: string
+  updated: string
 }
 
 // The copyright vault (SPEC §7 pattern_attachments): one record per uploaded file (label =
@@ -167,6 +215,45 @@ export function patternToFormValues(p: PatternRecord): PatternFormValues {
     visibility: p.visibility || 'private',
     tags: p.tags ?? [],
     notes: p.notes,
+  }
+}
+
+// Dates are 'YYYY-MM-DD' strings (native date-input format); conversion to PB's datetime shape
+// happens in the FormData builder. `summary` is deliberately absent: the pinned summary is
+// edited in place on the detail page and must never be clobbered by a form save.
+export const projectFormSchema = z.object({
+  name: z.string().trim().min(1, 'Every project needs a name'),
+  pattern: z.string(),
+  status: z.enum(PROJECT_STATUSES),
+  started_on: z.string(),
+  finished_on: z.string(),
+  hook_mm: numberString('Numbers only — like 5 or 5.5'),
+  yarn_used: z.string(),
+  visibility: z.enum(VISIBILITIES),
+})
+export type ProjectFormValues = z.infer<typeof projectFormSchema>
+
+export const projectFormDefaults: ProjectFormValues = {
+  name: '',
+  pattern: '',
+  status: 'planned',
+  started_on: '',
+  finished_on: '',
+  hook_mm: '',
+  yarn_used: '',
+  visibility: 'private',
+}
+
+export function projectToFormValues(p: ProjectRecord): ProjectFormValues {
+  return {
+    name: p.name,
+    pattern: p.pattern,
+    status: p.status || 'planned',
+    started_on: p.started_on.slice(0, 10),
+    finished_on: p.finished_on.slice(0, 10),
+    hook_mm: p.hook_mm ? String(p.hook_mm) : '',
+    yarn_used: p.yarn_used,
+    visibility: p.visibility || 'private',
   }
 }
 

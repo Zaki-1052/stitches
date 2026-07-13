@@ -102,9 +102,9 @@ finished triggers star confetti (drawn this session), defaults `finished_on`, pr
 finished-photo entry; pinned summary edit-in-place; journal feed — dated entries, photos, backdate
 via editable date, composer on top; cover photo; frogged microcopy per DESIGN §11.
 **Accept:**
-- [ ] 📱 Full loop: start project → journal entry with photo → finish → confetti once → entry prompt
-- [ ] `prefers-reduced-motion`: no confetti, everything still updates instantly
-- [ ] Backdated entries sort correctly
+- [x] 📱 Full loop: start project → journal entry with photo → finish → confetti once → entry prompt
+- [x] `prefers-reduced-motion`: no confetti, everything still updates instantly
+- [x] Backdated entries sort correctly
 
 ### Session 2.2 — Counters
 **Goal:** the flagship surface, flake-proof.

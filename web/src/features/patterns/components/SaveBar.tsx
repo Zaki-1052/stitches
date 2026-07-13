@@ -6,10 +6,12 @@ export function SaveBar({
   saving,
   disabled,
   onCancel,
+  label,
 }: {
   saving: boolean
   disabled?: boolean
   onCancel: () => void
+  label: string
 }) {
   return (
     <div
@@ -24,7 +26,7 @@ export function SaveBar({
         Cancel
       </button>
       <button type="submit" className="btn btn-primary btn-lg flex-1" disabled={saving || disabled}>
-        {saving ? 'Saving…' : 'Save pattern'}
+        {saving ? 'Saving…' : label}
       </button>
     </div>
   )
