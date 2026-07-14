@@ -32,12 +32,14 @@ export const entryKeys = {
   forProject: (projectId: string) => [...entryKeys.all, 'project', projectId] as const,
 }
 
-export function useProjects(status: ProjectStatus | null) {
+// `enabled` lets Home defer its "any projects at all?" probe until the in-progress list has
+// settled empty (the new-user vs. nothing-on-the-hook distinction) — default is unchanged.
+export function useProjects(status: ProjectStatus | null, opts: { enabled?: boolean } = {}) {
   const { user } = useAuth()
   const viewerId = user?.id ?? ''
   return useQuery({
     queryKey: projectKeys.list(viewerId, status),
-    enabled: viewerId !== '',
+    enabled: viewerId !== '' && (opts.enabled ?? true),
     queryFn: () => {
       const parts = [pb.filter('owner = {:me}', { me: viewerId })]
       if (status) parts.push(pb.filter('status = {:status}', { status }))

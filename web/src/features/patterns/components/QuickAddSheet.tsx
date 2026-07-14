@@ -1,30 +1,14 @@
 // web/src/features/patterns/components/QuickAddSheet.tsx — the dock ➕ quick-add sheet (DESIGN
-// §9's import doors; the paste-a-link door joins in Session 3.2). "Add a file" processes the
-// pick right here — pdfjs page-1 → WebP for PDFs (soft-fail), the §8 pipeline for images
-// (hard-fail) — stashes it in pendingAttachmentImport, and lands on /patterns/new pre-filled.
-// "Type it in" is the blank form. The hidden file input lives inside the <dialog> so the picker
-// opens from the button's own user gesture; pick errors render inline because the dialog's
-// top layer would paint over any toast.
-import { useEffect, useRef, useState } from 'react'
+// §9's import doors; the paste-a-link door joins in Session 3.2). "Add a file" runs the shared
+// useAddFileDoor hook (also behind Home's doors row) — pdfjs page-1 → WebP for PDFs (soft-fail),
+// the §8 pipeline for images (hard-fail) — and lands on /patterns/new pre-filled. "Type it in"
+// is the blank form. The hidden file input lives inside the <dialog> so the picker opens from
+// the button's own user gesture; pick errors render inline because the dialog's top layer would
+// paint over any toast.
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { FileUp, PenLine } from 'lucide-react'
-import { useToast } from '../../shared/toast.tsx'
-import { ImagePipelineError, processImage } from '../../shared/imagePipeline.ts'
-import type { ProcessedImage } from '../../shared/imagePipeline.ts'
-import { PdfThumbnailError, renderPdfPageOneThumbnail } from '../../shared/pdfThumbnail.ts'
-import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENT_MB } from '../attachmentMutations.ts'
-import { setPendingAttachmentImport } from '../pendingAttachmentImport.ts'
-
-// "vintage-doily_scan.pdf" → "vintage doily scan"
-function titleFromFilename(name: string): string {
-  return (
-    name
-      .replace(/\.[^.]+$/, '')
-      .replace(/[-_]+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim() || 'New pattern'
-  )
-}
+import { useAddFileDoor } from '../useAddFileDoor.ts'
 
 function Door({
   icon,
@@ -62,76 +46,19 @@ function Door({
 
 export function QuickAddSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
-  const toast = useToast()
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
+  const { busy, error, clearError, inputRef, onInputChange } = useAddFileDoor(onClose)
 
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return
     if (open && !dialog.open) {
-      setError('')
+      clearError()
       dialog.showModal()
     } else if (!open && dialog.open) {
       dialog.close()
     }
-  }, [open])
-
-  const handleFile = async (file: File | undefined) => {
-    if (!file) return
-    setError('')
-    setBusy(true)
-    try {
-      let attachmentFile: File
-      let thumbnail: ProcessedImage | null
-      let softNote = ''
-
-      if (file.type === 'application/pdf') {
-        if (file.size > MAX_ATTACHMENT_BYTES) {
-          setError(`That PDF is over ${MAX_ATTACHMENT_MB} MB — too big to store here.`)
-          return
-        }
-        attachmentFile = file // PDFs upload as-is; only their thumbnail is an image
-        thumbnail = null
-        try {
-          thumbnail = await renderPdfPageOneThumbnail(file)
-        } catch (err) {
-          if (!(err instanceof PdfThumbnailError)) throw err
-          softNote = err.message
-        }
-      } else {
-        // Images (incl. iPhone HEIC) run the §8 pipeline; the attachment field's MIME list has
-        // no HEIC, so the converted WebP is what gets vaulted — and it doubles as the thumbnail.
-        let processed: ProcessedImage
-        try {
-          processed = await processImage(file)
-        } catch (err) {
-          setError(
-            err instanceof ImagePipelineError ? err.message : 'Something went wrong — try again?',
-          )
-          return
-        }
-        attachmentFile = processed.file
-        thumbnail = processed
-      }
-
-      setPendingAttachmentImport({
-        suggestedTitle: titleFromFilename(file.name),
-        attachmentFile,
-        attachmentLabel: file.name,
-        thumbnail,
-      })
-      onClose()
-      navigate('/patterns/new')
-      if (softNote) toast(softNote, 'info')
-    } finally {
-      setBusy(false)
-      // Reset so re-picking the same file still fires a change event.
-      if (inputRef.current) inputRef.current.value = ''
-    }
-  }
+  }, [open, clearError])
 
   return (
     <dialog ref={dialogRef} className="modal modal-bottom" onClose={onClose}>
@@ -179,7 +106,7 @@ export function QuickAddSheet({ open, onClose }: { open: boolean; onClose: () =>
           type="file"
           accept="application/pdf,image/*"
           className="hidden"
-          onChange={(e) => void handleFile(e.target.files?.[0])}
+          onChange={onInputChange}
         />
       </div>
       <form method="dialog" className="modal-backdrop">

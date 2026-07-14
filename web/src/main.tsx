@@ -30,7 +30,7 @@ import ProjectsPage from './routes/ProjectsPage.tsx'
 import ProjectDetailPage from './routes/ProjectDetailPage.tsx'
 import ProjectFormPage from './routes/ProjectFormPage.tsx'
 import CounterPage from './routes/CounterPage.tsx'
-import SettingsStub from './routes/SettingsStub.tsx'
+import SettingsPage from './routes/SettingsPage.tsx'
 import TokensPage from './routes/TokensPage.tsx'
 
 // Module scope, not an effect: the persisted counter queue must flush on reopen even if no
@@ -61,7 +61,7 @@ const router = createBrowserRouter([
       { path: '/projects/:id', element: <ProjectDetailPage /> },
       { path: '/projects/:id/edit', element: <ProjectFormPage /> },
       { path: '/projects/:id/count', element: <CounterPage /> },
-      { path: '/settings', element: <SettingsStub /> },
+      { path: '/settings', element: <SettingsPage /> },
     ],
   },
 ])

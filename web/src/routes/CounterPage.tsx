@@ -20,6 +20,7 @@ import { useCountersRealtime } from '../features/counters/realtime.ts'
 import { useOutboxErrorToasts } from '../features/counters/useOutboxErrorToasts.ts'
 import { buildTapOps, crossesTarget } from '../features/counters/actions.ts'
 import { useWakeLock, wakeLockSupported } from '../features/counters/useWakeLock.ts'
+import { useHapticTick } from '../features/counters/haptics.tsx'
 import { CounterSheet } from '../features/counters/components/CounterSheet.tsx'
 import { EditValueSheet } from '../features/counters/components/EditValueSheet.tsx'
 import { ResetConfirmSheet } from '../features/counters/components/ResetConfirmSheet.tsx'
@@ -68,6 +69,7 @@ export default function CounterPage() {
   const dim = usePref('counterDim')
   const wake = usePref('counterWakeLock')
   useWakeLock(wake)
+  const haptic = useHapticTick()
 
   const [searchParams, setSearchParams] = useSearchParams()
   const [editSheetOpen, setEditSheetOpen] = useState(false)
@@ -132,6 +134,7 @@ export default function CounterPage() {
     if (!active) return
     const before = foldValue(active.value, active.id, pending)
     if (n < 0 && before <= 0) return
+    haptic.tick() // must fire inside the tap's own gesture; resets/edits don't tick
     appendOps(buildTapOps(counters, active.id, n))
     if (n > 0 && !reducedMotion) {
       setPulseTick((t) => t + 1)
@@ -432,6 +435,7 @@ export default function CounterPage() {
         />
       )}
       {starring && <TargetStar onComplete={() => setStarring(false)} />}
+      {haptic.element}
 
       <CounterSheet
         open={editSheetOpen}

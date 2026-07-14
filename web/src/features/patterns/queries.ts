@@ -18,6 +18,8 @@ export const patternKeys = {
     [...patternKeys.lists(), viewerId, filters] as const,
   // Nested under lists() so every existing pattern-mutation invalidation catches it too.
   options: (viewerId: string) => [...patternKeys.lists(), 'options', viewerId] as const,
+  recent: (viewerId: string, limit: number) =>
+    [...patternKeys.lists(), 'recent', viewerId, limit] as const,
   details: () => [...patternKeys.all, 'detail'] as const,
   detail: (id: string) => [...patternKeys.details(), id] as const,
 }
@@ -56,6 +58,24 @@ export function usePatterns(filters: LibraryFilters) {
         sort: '-updated',
         expand: 'tags',
       }),
+  })
+}
+
+// Home's "recently added" strip (DESIGN §9) — one lean page, not the full library.
+export function useRecentPatterns(limit: number) {
+  const { user } = useAuth()
+  const viewerId = user?.id ?? ''
+  return useQuery({
+    queryKey: patternKeys.recent(viewerId, limit),
+    enabled: viewerId !== '',
+    queryFn: async () => {
+      const page = await pb.collection('patterns').getList<PatternRecord>(1, limit, {
+        filter: pb.filter('owner = {:me}', { me: viewerId }),
+        sort: '-created',
+        expand: 'tags',
+      })
+      return page.items
+    },
   })
 }
 

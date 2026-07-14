@@ -47,24 +47,45 @@ export function useMyCounters() {
   })
 }
 
-// Upsert a server record into its project's list. Skips when the cached row is fresher
-// (PB `updated` is ms-precision and lexicographically ordered); inserts keep created-asc
-// order so a realtime create lands where the pager expects it. No-op when the list isn't
-// cached — the next mount refetches anyway.
-export function applyServerCounter(record: CounterRecord) {
-  queryClient.setQueryData<CounterRecord[]>(counterKeys.forProject(record.project), (old) => {
-    if (!old) return old
-    const existing = old.find((c) => c.id === record.id)
-    if (existing && existing.updated > record.updated) return old
-    if (!existing) {
-      return [...old, record].sort((a, b) => (a.created < b.created ? -1 : 1))
-    }
-    return old.map((c) => (c.id === record.id ? record : c))
-  })
+// Skips when the cached row is fresher (PB `updated` is ms-precision and lexicographically
+// ordered); inserts keep created-asc order so a realtime create lands where the pager expects
+// it. No-op when the list isn't cached — the next mount refetches anyway.
+function upsertCounter(
+  old: CounterRecord[] | undefined,
+  record: CounterRecord,
+): CounterRecord[] | undefined {
+  if (!old) return old
+  const existing = old.find((c) => c.id === record.id)
+  if (existing && existing.updated > record.updated) return old
+  if (!existing) {
+    return [...old, record].sort((a, b) => (a.created < b.created ? -1 : 1))
+  }
+  return old.map((c) => (c.id === record.id ? record : c))
 }
 
-export function removeCounterFromCache(record: { id: string; project: string }) {
+// Upsert a server record into BOTH lists that hold it: the project's (the counter surface)
+// and the viewer's `mine` list (home hero + /projects progress bars). Mirroring into `mine`
+// closes the queryClient staleTime hole: count on the surface, go home within 30 s — the ops
+// have flushed and drained, so only a funneled cache keeps the hero value fresh.
+export function applyServerCounter(record: CounterRecord) {
+  queryClient.setQueryData<CounterRecord[]>(counterKeys.forProject(record.project), (old) =>
+    upsertCounter(old, record),
+  )
+  queryClient.setQueryData<CounterRecord[]>(counterKeys.mine(record.owner), (old) =>
+    upsertCounter(old, record),
+  )
+}
+
+// `owner` is optional so useDeleteCounter's {id, project} call keeps working — a viewer only
+// ever deletes their own counters, so the authStore id is the right `mine` key there.
+export function removeCounterFromCache(record: { id: string; project: string; owner?: string }) {
   queryClient.setQueryData<CounterRecord[]>(counterKeys.forProject(record.project), (old) =>
     old?.filter((c) => c.id !== record.id),
   )
+  const owner = record.owner ?? pb.authStore.record?.id ?? ''
+  if (owner !== '') {
+    queryClient.setQueryData<CounterRecord[]>(counterKeys.mine(owner), (old) =>
+      old?.filter((c) => c.id !== record.id),
+    )
+  }
 }

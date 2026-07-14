@@ -1,17 +1,140 @@
-// web/src/routes/HomePage.tsx — home landing stub. The real "on the hook right now" feed and
-// quick-add arrive in Phase 1; for now it's a friendly empty state that proves the shell renders.
-export default function HomePage() {
+// web/src/routes/HomePage.tsx — Home, "On the hook" (DESIGN §9). AppHeader (greeting + avatar →
+// settings) lives in AppShell above; this page is the hero card(s) with live counter values,
+// the quick-add doors, and the recently-added strip. Hero values fold pending taps over server
+// truth (SPEC §11); no realtime subscription here — realtime stays per open project.
+//
+// State matrix (p08 plan): WIP → heroes · no WIP but content → "nothing on the hook" ghost card
+// · truly nothing → the new-user empty state. The "any content?" probe defers until the
+// in-progress list settles empty, and nothing is decided while a relevant query is pending
+// (no empty-state flash).
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router'
+import { useFinishedPatternIds, useProjects } from '../features/projects/queries.ts'
+import { useMyCounters } from '../features/counters/queries.ts'
+import { useRecentPatterns } from '../features/patterns/queries.ts'
+import { usePendingOps } from '../lib/outbox.ts'
+import type { CounterRecord, ProjectRecord } from '../lib/schema.ts'
+import { HeroCard } from '../features/home/components/HeroCard.tsx'
+import { DoorsRow } from '../features/home/components/DoorsRow.tsx'
+import { RecentPatternsStrip } from '../features/home/components/RecentPatternsStrip.tsx'
+import { HomeEmptyState } from '../features/home/components/HomeEmptyState.tsx'
+import { JournalQuickSheet } from '../features/home/components/JournalQuickSheet.tsx'
+
+const RECENT_LIMIT = 8
+const NO_FINISHED: ReadonlySet<string> = new Set()
+
+function HeroSkeleton() {
   return (
-    <div className="px-5 py-4">
-      <section
-        className="rounded-box bg-base-100 p-6 text-center"
-        style={{ boxShadow: 'var(--shadow-soft)' }}
-      >
-        <p className="font-display text-lg font-bold">nothing on the hook yet</p>
-        <p className="mt-1 text-sm" style={{ color: 'var(--ink-muted)' }}>
-          Your works-in-progress will nest here.
+    <div className="px-5">
+      <div className="rounded-box flex flex-col gap-3 bg-base-100 p-4">
+        <div className="skeleton aspect-[16/9] w-full rounded-2xl" />
+        <div className="skeleton h-5 w-2/3" />
+        <div className="skeleton h-12 w-full" />
+      </div>
+    </div>
+  )
+}
+
+export default function HomePage() {
+  const inProgressQuery = useProjects('in_progress')
+  const countersQuery = useMyCounters()
+  const pendingOps = usePendingOps()
+  const recentQuery = useRecentPatterns(RECENT_LIMIT)
+  const finishedQuery = useFinishedPatternIds()
+  const [journalFor, setJournalFor] = useState<ProjectRecord | null>(null)
+
+  const inProgress = inProgressQuery.data ?? []
+  const settledEmpty = inProgressQuery.isSuccess && inProgress.length === 0
+  const anyProjectsQuery = useProjects(null, { enabled: settledEmpty })
+
+  // Each project's hero counter: primary = oldest with a target (the p07 /projects rule),
+  // falling back to the oldest counter at all. useMyCounters arrives created-asc.
+  const heroCounters = useMemo(() => {
+    const map = new Map<string, CounterRecord>()
+    const counters = countersQuery.data ?? []
+    for (const c of counters) if (c.target > 0 && !map.has(c.project)) map.set(c.project, c)
+    for (const c of counters) if (!map.has(c.project)) map.set(c.project, c)
+    return map
+  }, [countersQuery.data])
+
+  const patterns = recentQuery.data ?? []
+  // Only the both-probes-settled, both-empty case earns the grand empty state; any error or
+  // pending state falls back to the ghost card / skeleton rather than misclassifying the user.
+  const isNewUser =
+    settledEmpty &&
+    recentQuery.isSuccess &&
+    patterns.length === 0 &&
+    anyProjectsQuery.isSuccess &&
+    (anyProjectsQuery.data ?? []).length === 0
+
+  const heroCard = (project: ProjectRecord) => (
+    <HeroCard
+      project={project}
+      counter={heroCounters.get(project.id)}
+      pendingOps={pendingOps}
+      onJournal={setJournalFor}
+    />
+  )
+
+  let heroSection: React.ReactNode
+  if (inProgressQuery.isPending || (inProgress.length > 0 && countersQuery.isPending)) {
+    heroSection = <HeroSkeleton />
+  } else if (inProgressQuery.isError) {
+    heroSection = (
+      <div className="flex flex-col items-center gap-3 px-5 py-8 text-center">
+        <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>
+          Your projects couldn't load — try again in a moment?
         </p>
-      </section>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={() => void inProgressQuery.refetch()}
+        >
+          Retry
+        </button>
+      </div>
+    )
+  } else if (inProgress.length === 1) {
+    heroSection = <div className="px-5">{heroCard(inProgress[0])}</div>
+  } else if (inProgress.length > 1) {
+    heroSection = (
+      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-px-5 px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {inProgress.map((project) => (
+          <div key={project.id} className="w-[86%] shrink-0 snap-center">
+            {heroCard(project)}
+          </div>
+        ))}
+      </div>
+    )
+  } else if (recentQuery.isPending || anyProjectsQuery.isPending) {
+    heroSection = <HeroSkeleton />
+  } else if (isNewUser) {
+    heroSection = <HomeEmptyState />
+  } else {
+    heroSection = (
+      <div className="px-5">
+        <div
+          className="rounded-box flex flex-col items-center gap-3 border-2 border-dashed p-6 text-center"
+          style={{ borderColor: 'var(--color-base-300)' }}
+        >
+          <p className="font-display text-lg font-bold">Nothing on the hook right now.</p>
+          <Link to="/projects/new" className="btn btn-primary">
+            Start a project
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-6 pt-1 pb-4">
+      {heroSection}
+      <DoorsRow />
+      <RecentPatternsStrip
+        patterns={patterns}
+        finishedPatternIds={finishedQuery.data ?? NO_FINISHED}
+      />
+      <JournalQuickSheet project={journalFor} onClose={() => setJournalFor(null)} />
     </div>
   )
 }
