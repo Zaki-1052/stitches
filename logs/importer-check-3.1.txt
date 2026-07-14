@@ -1,0 +1,40 @@
+
+> stitches@0.0.0 verify:importer
+> node --env-file-if-exists=.env scripts/verify/importer-check.mjs
+
+importer-check: http://127.0.0.1:8095 (PB at http://127.0.0.1:8090)
+
+--- auth: 401 without a valid token ---
+PASS  no token → 401
+PASS  garbage token → 401
+
+--- body shape & URL parsing: 400 ---
+PASS  empty body {} → 400
+PASS  unparseable url → 400
+PASS  ftp scheme → 400
+
+--- SSRF guard: 403 for private/reserved targets (offline cases) ---
+PASS  loopback (PocketBase itself) → 403
+PASS  RFC 1918 target → 403
+PASS  link-local metadata IP → 403
+PASS  IPv6 loopback literal → 403
+PASS  IPv4-mapped IPv6 loopback → 403
+PASS  /import/image guards the same pipeline → 403
+
+--- SSRF guard + caps, network-dependent cases ---
+PASS  [net] public hostname resolving private (localtest.me → 127.0.0.1) → 403
+PASS  [net] redirect chain ending private (httpbin.org → 192.168.1.1) → 403
+PASS  [net] not-HTML (a PNG) → 422
+PASS  [net] >3 MB page (single-page WHATWG spec) → 422
+
+--- extraction: 200 + the SPEC §10 contract shape ---
+PASS  [net] real page (https://github.blog/) → 200
+PASS  [net] response has exactly the contract keys
+PASS  [net] source_url echoes the requested URL
+PASS  [net] title extracted (page has one)
+PASS  [net] its og:image through /import/image → 200 image/png (6920 bytes)
+
+--- rate limit: 20/min per user (as user 2, so user 1 keeps a clean budget) ---
+PASS  burst as user 2 → 429 after 21 requests
+
+importer-check: 21 passed, 0 failed

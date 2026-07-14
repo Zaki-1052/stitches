@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# scripts/dev.sh — one-command local dev: PocketBase (127.0.0.1:8090) + Vite (5173).
+# scripts/dev.sh — one-command local dev: PocketBase (127.0.0.1:8090) + importer sidecar
+# (127.0.0.1:8095) + Vite (5173).
 # Downloads the pinned PocketBase binary into pb/ on first run. Zara runs this; Claude does not.
 
 set -euo pipefail
@@ -36,6 +37,13 @@ fi
 
 "$PB_BIN" serve --http=127.0.0.1:8090 --dir="$PB_DIR/pb_data" --migrationsDir="$PB_DIR/pb_migrations" &
 PB_PID=$!
-trap 'kill "$PB_PID" 2>/dev/null || true' EXIT INT TERM
+
+# Importer sidecar (SPEC §10) — tsx watch in dev; the values match config.ts's defaults but
+# are set explicitly to document the contract. exec keeps IMPORTER_PID = tsx itself, which
+# forwards SIGTERM to its node child.
+( cd "$ROOT/importer" && PORT=8095 PB_URL=http://127.0.0.1:8090 exec "$ROOT/node_modules/.bin/tsx" watch src/server.ts ) &
+IMPORTER_PID=$!
+
+trap 'kill "$PB_PID" "$IMPORTER_PID" 2>/dev/null || true' EXIT INT TERM
 
 npm run dev --workspace web
