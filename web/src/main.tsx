@@ -16,6 +16,7 @@ import './styles/base.css'
 import './styles/richtext.css'
 
 import { AuthProvider } from './lib/auth.tsx'
+import { initOutbox } from './lib/outbox.ts'
 import { queryClient } from './features/shared/queryClient.ts'
 import { ToastProvider } from './features/shared/toast.tsx'
 import { ProtectedRoute } from './components/ProtectedRoute.tsx'
@@ -28,8 +29,13 @@ import PatternFormPage from './routes/PatternFormPage.tsx'
 import ProjectsPage from './routes/ProjectsPage.tsx'
 import ProjectDetailPage from './routes/ProjectDetailPage.tsx'
 import ProjectFormPage from './routes/ProjectFormPage.tsx'
+import CounterPage from './routes/CounterPage.tsx'
 import SettingsStub from './routes/SettingsStub.tsx'
 import TokensPage from './routes/TokensPage.tsx'
+
+// Module scope, not an effect: the persisted counter queue must flush on reopen even if no
+// counter screen ever mounts (SPEC §11), and StrictMode double-invokes effects, not modules.
+initOutbox()
 
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -54,6 +60,7 @@ const router = createBrowserRouter([
       { path: '/projects/new', element: <ProjectFormPage /> },
       { path: '/projects/:id', element: <ProjectDetailPage /> },
       { path: '/projects/:id/edit', element: <ProjectFormPage /> },
+      { path: '/projects/:id/count', element: <CounterPage /> },
       { path: '/settings', element: <SettingsStub /> },
     ],
   },

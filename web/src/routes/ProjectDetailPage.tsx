@@ -3,7 +3,7 @@
 // the celebration moment: confetti (once, from the mutation callback — StrictMode double-invokes
 // effects, not mutation callbacks), finished_on defaulting only-if-empty, then the finished-photo
 // prompt. Reduced motion skips straight to the prompt; the status update is optimistic either
-// way. Counters card lands in Session 2.2.
+// way. The counters card and its realtime subscription are owner-only (SPEC §7/§11).
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { Pencil } from 'lucide-react'
@@ -26,6 +26,8 @@ import { StarConfetti } from '../features/projects/components/StarConfetti.tsx'
 import { FinishedPromptDialog } from '../features/projects/components/FinishedPromptDialog.tsx'
 import { SummaryCard } from '../features/projects/components/SummaryCard.tsx'
 import { JournalFeed } from '../features/projects/components/JournalFeed.tsx'
+import { CountersCard } from '../features/counters/components/CountersCard.tsx'
+import { useCountersRealtime } from '../features/counters/realtime.ts'
 import { ConfirmDeleteDialog } from '../features/projects/components/ConfirmDeleteDialog.tsx'
 import { VisibilityToggle } from '../features/patterns/components/VisibilityToggle.tsx'
 
@@ -47,6 +49,7 @@ export default function ProjectDetailPage() {
   const projectQuery = useProject(id)
   const quickUpdate = useQuickUpdateProject()
   const deleteProject = useDeleteProject()
+  useCountersRealtime(id) // SPEC §11: counters realtime, subscribed per open project
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [celebrating, setCelebrating] = useState(false)
@@ -200,7 +203,7 @@ export default function ProjectDetailPage() {
 
         <SummaryCard project={project} isOwner={isOwner} />
 
-        {/* Counters card lands in Session 2.2. */}
+        <CountersCard project={project} isOwner={isOwner} />
 
         <JournalFeed
           project={project}

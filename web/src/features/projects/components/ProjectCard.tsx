@@ -1,15 +1,23 @@
 // web/src/features/projects/components/ProjectCard.tsx — one project in the grouped /projects
-// list (DESIGN §9): cover, name, pattern, status chip, started date. Full-width rows (grouped
-// sections read as lists). Lists never load originals (SPEC §8); no cover → yarn-ball
-// placeholder. The slim counter-progress bar arrives with Session 2.2's counters.
+// list (DESIGN §9): cover, name, pattern, status chip, started date, and a slim progress bar
+// when counters have targets — driven by the project's *primary* counter, the oldest one with
+// a target (p07 plan; Session 2.3's home hero reuses the notion). Server values are enough at
+// list altitude — pending taps reconcile within seconds. Full-width rows (grouped sections
+// read as lists). Lists never load originals (SPEC §8); no cover → yarn-ball placeholder.
 import { Link } from 'react-router'
 import { pb } from '../../../lib/pb.ts'
-import type { ProjectRecord } from '../../../lib/schema.ts'
+import type { CounterRecord, ProjectRecord } from '../../../lib/schema.ts'
 import { formatShortDate } from '../../../lib/dates.ts'
 import { YarnBall } from '../../../components/YarnBall.tsx'
 import { StatusChip } from './StatusChip.tsx'
 
-export function ProjectCard({ project }: { project: ProjectRecord }) {
+export function ProjectCard({
+  project,
+  progress,
+}: {
+  project: ProjectRecord
+  progress?: CounterRecord
+}) {
   const patternTitle = project.expand?.pattern?.title ?? ''
   return (
     <Link
@@ -48,6 +56,26 @@ export function ProjectCard({ project }: { project: ProjectRecord }) {
             </span>
           )}
         </span>
+        {progress && (
+          <span className="flex items-center gap-2">
+            <span
+              className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full"
+              style={{ background: 'var(--color-base-300)' }}
+              aria-hidden="true"
+            >
+              <span
+                className="block h-full rounded-full"
+                style={{
+                  background: 'var(--color-primary)',
+                  width: `${Math.min(100, (progress.value / progress.target) * 100)}%`,
+                }}
+              />
+            </span>
+            <span className="shrink-0 text-xs tabular-nums" style={{ color: 'var(--ink-muted)' }}>
+              {progress.value} of {progress.target}
+            </span>
+          </span>
+        )}
       </span>
     </Link>
   )

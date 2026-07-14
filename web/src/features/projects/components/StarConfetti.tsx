@@ -12,8 +12,9 @@ import { PATCH_SWATCHES } from '../../shared/patchColors.ts'
 const STAR_COUNT = 24
 const CONFETTI_MS = 1500
 
-// Plump 5-point star on the 24 px icon grid.
-const STAR_PATH =
+// Plump 5-point star on the 24 px icon grid. Exported: the counter surface's single
+// target-hit star (TargetStar) reuses the exact same geometry so every star is one hand's.
+export const STAR_PATH =
   'M12 3 L14.59 8.44 L20.56 9.22 L16.18 13.36 L17.29 19.28 L12 16.4 L6.71 19.28 ' +
   'L7.82 13.36 L3.44 9.22 L9.41 8.44 Z'
 

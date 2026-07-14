@@ -5,10 +5,11 @@
 import { useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { Plus } from 'lucide-react'
-import type { ProjectRecord, ProjectStatus } from '../lib/schema.ts'
+import type { CounterRecord, ProjectRecord, ProjectStatus } from '../lib/schema.ts'
 import { PROJECT_STATUS_LABELS, PROJECT_STATUSES } from '../lib/schema.ts'
 import { patchSwatch } from '../features/shared/patchColors.ts'
 import { useProjects } from '../features/projects/queries.ts'
+import { useMyCounters } from '../features/counters/queries.ts'
 import { parseProjectsParams, serializeProjectsParams } from '../features/projects/urlParams.ts'
 import { normalizeStatus, STATUS_PATCH } from '../features/projects/status.ts'
 import { ProjectCard } from '../features/projects/components/ProjectCard.tsx'
@@ -73,6 +74,17 @@ export default function ProjectsPage() {
 
   const projectsQuery = useProjects(status)
   const projects = projectsQuery.data ?? []
+
+  // DESIGN §9's slim progress bar, deferred from 2.1: each project's *primary* counter is its
+  // oldest with a target (the list arrives created-asc, so first match wins; p07 plan).
+  const countersQuery = useMyCounters()
+  const progressByProject = useMemo(() => {
+    const map = new Map<string, CounterRecord>()
+    for (const counter of countersQuery.data ?? []) {
+      if (counter.target > 0 && !map.has(counter.project)) map.set(counter.project, counter)
+    }
+    return map
+  }, [countersQuery.data])
 
   const setStatus = (next: ProjectStatus | null) => {
     setSearchParams(serializeProjectsParams({ status: next }), { replace: true })
@@ -149,7 +161,11 @@ export default function ProjectsPage() {
         // A single-status filter needs no section header — the selected chip says it.
         <div className="flex flex-col gap-3 px-5">
           {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
+            <ProjectCard
+              key={project.id}
+              project={project}
+              progress={progressByProject.get(project.id)}
+            />
           ))}
         </div>
       ) : (
@@ -158,7 +174,11 @@ export default function ProjectsPage() {
             <section key={section.status} className="flex flex-col gap-3">
               <SectionHeader status={section.status} />
               {section.projects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  progress={progressByProject.get(project.id)}
+                />
               ))}
             </section>
           ))}

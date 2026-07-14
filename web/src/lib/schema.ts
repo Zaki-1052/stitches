@@ -141,6 +141,23 @@ export interface JournalEntryRecord {
   updated: string
 }
 
+// Personal process, never shared (SPEC §7 counters): value is server-authoritative and only
+// ever written through the outbox (`value+` deltas / sets — lib/outbox.ts); label/target/
+// resets_with go through normal mutations. PB's zero values mean "not set": target 0 = no
+// target, resets_with '' = stands alone. `resets_with` points at the counter whose *increment*
+// resets this one to 0.
+export interface CounterRecord {
+  id: string
+  owner: string
+  project: string
+  label: string
+  value: number
+  target: number
+  resets_with: string
+  created: string
+  updated: string
+}
+
 // The copyright vault (SPEC §7 pattern_attachments): one record per uploaded file (label =
 // original filename), plus at most one text-only record carrying pattern_text. `files` entries
 // are Protected — URLs only work with a short-lived token (features/shared/protectedFiles.ts).
