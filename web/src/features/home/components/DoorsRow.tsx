@@ -1,11 +1,12 @@
-// web/src/features/home/components/DoorsRow.tsx — the quick-add doors on Home (DESIGN §9).
-// Two doors for now, sharing the dock ➕ sheet's palette, captions, and pick logic
-// (useAddFileDoor); the "Paste a link" door joins in Session 3.2 when the importer exists.
-// The hidden file input lives here so the picker opens from the door's own user gesture;
-// pick errors render inline, matching the sheet.
+// web/src/features/home/components/DoorsRow.tsx — the quick-add doors on Home (DESIGN §9):
+// Paste a link · Add a file · Type it in, one row, sharing the dock ➕ sheet's palette,
+// captions, and door logic (usePasteLinkDoor / useAddFileDoor). The hidden file input lives
+// here so the picker opens from the door's own user gesture; door errors render inline,
+// matching the sheet.
 import { useNavigate } from 'react-router'
-import { FileUp, PenLine } from 'lucide-react'
+import { ClipboardPaste, FileUp, PenLine } from 'lucide-react'
 import { useAddFileDoor } from '../../patterns/useAddFileDoor.ts'
+import { usePasteLinkDoor } from '../../patterns/usePasteLinkDoor.ts'
 
 function DoorTile({
   icon,
@@ -44,12 +45,29 @@ function DoorTile({
 export function DoorsRow() {
   const navigate = useNavigate()
   const { busy, error, inputRef, onInputChange } = useAddFileDoor()
+  const paste = usePasteLinkDoor()
+  const anyBusy = busy || paste.busy
 
   return (
     <section className="flex flex-col gap-3 px-5">
       <h2 className="font-display text-xl font-semibold lowercase">add a pattern</h2>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
+        <DoorTile
+          icon={
+            paste.busy ? (
+              <span className="loading loading-spinner" />
+            ) : (
+              <ClipboardPaste size={28} strokeWidth={2} aria-hidden="true" />
+            )
+          }
+          title="Paste a link"
+          caption={paste.busy ? 'Fetching that page…' : 'A link you copied'}
+          soft="var(--patch-lilac-soft)"
+          deep="var(--patch-lilac-deep)"
+          disabled={anyBusy}
+          onPress={paste.onPress}
+        />
         <DoorTile
           icon={
             busy ? (
@@ -62,7 +80,7 @@ export function DoorsRow() {
           caption={busy ? 'Reading your file…' : 'A PDF or a photo'}
           soft="var(--patch-blue-soft)"
           deep="var(--patch-blue-deep)"
-          disabled={busy}
+          disabled={anyBusy}
           onPress={() => inputRef.current?.click()}
         />
         <DoorTile
@@ -71,12 +89,13 @@ export function DoorsRow() {
           caption="Start from a blank form"
           soft="var(--patch-mint-soft)"
           deep="var(--patch-mint-deep)"
-          disabled={busy}
+          disabled={anyBusy}
           onPress={() => navigate('/patterns/new')}
         />
       </div>
 
       {error && <p className="text-error text-sm">{error}</p>}
+      {paste.error && <p className="text-error text-sm">{paste.error}</p>}
 
       <input
         ref={inputRef}

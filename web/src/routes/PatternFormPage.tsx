@@ -12,6 +12,7 @@ import { usePattern } from '../features/patterns/queries.ts'
 import { useCreatePattern, useUpdatePattern } from '../features/patterns/mutations.ts'
 import { useCreateAttachment } from '../features/patterns/attachmentMutations.ts'
 import { useConsumePendingAttachmentImport } from '../features/patterns/pendingAttachmentImport.ts'
+import { useConsumePendingUrlImport } from '../features/patterns/pendingUrlImport.ts'
 import { buildPatternFormData } from '../features/patterns/formData.ts'
 import type { PatternImages } from '../features/patterns/formData.ts'
 import { PatternForm } from '../features/patterns/components/PatternForm.tsx'
@@ -35,9 +36,11 @@ export default function PatternFormPage() {
   const createPattern = useCreatePattern()
   const updatePattern = useUpdatePattern()
   const createAttachment = useCreateAttachment()
-  // Consumed unconditionally (rules of hooks); only the create path uses it, and an edit-page
-  // mount simply discards an abandoned pick.
+  // Consumed unconditionally (rules of hooks); only the create path uses them, and an edit-page
+  // mount simply discards an abandoned pick. At most one bridge is ever set — each door stashes
+  // and navigates in the same tick.
   const pendingImport = useConsumePendingAttachmentImport()
+  const pendingUrl = useConsumePendingUrlImport()
 
   const title = mode === 'create' ? 'new pattern' : 'edit pattern'
 
@@ -106,9 +109,11 @@ export default function PatternFormPage() {
     }
   }
 
-  const createDefaults = pendingImport
-    ? { ...patternFormDefaults, title: pendingImport.suggestedTitle }
-    : patternFormDefaults
+  const createDefaults = {
+    ...patternFormDefaults,
+    ...(pendingUrl?.defaults ?? {}),
+    ...(pendingImport ? { title: pendingImport.suggestedTitle } : {}),
+  }
 
   return (
     <Frame title={title}>
@@ -116,8 +121,13 @@ export default function PatternFormPage() {
         mode={mode}
         defaultValues={record ? patternToFormValues(record) : createDefaults}
         record={record}
-        initialThumbnail={mode === 'create' ? (pendingImport?.thumbnail ?? undefined) : undefined}
+        initialThumbnail={
+          mode === 'create'
+            ? (pendingImport?.thumbnail ?? pendingUrl?.thumbnail ?? undefined)
+            : undefined
+        }
         pendingAttachmentLabel={mode === 'create' ? pendingImport?.attachmentLabel : undefined}
+        importedFrom={mode === 'create' ? (pendingUrl?.importedFrom ?? undefined) : undefined}
         onSubmit={handleSubmit}
         onCancel={goBack}
       />

@@ -7,7 +7,7 @@
 import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Paperclip } from 'lucide-react'
+import { Link, Paperclip } from 'lucide-react'
 import { pb } from '../../../lib/pb.ts'
 import {
   CRAFTS,
@@ -57,6 +57,7 @@ export function PatternForm({
   record,
   initialThumbnail,
   pendingAttachmentLabel,
+  importedFrom,
   onSubmit,
   onCancel,
 }: {
@@ -67,6 +68,9 @@ export function PatternForm({
   // will be vaulted on save. Both flow through the normal ThumbnailState/FormData mechanics.
   initialThumbnail?: ProcessedImage
   pendingAttachmentLabel?: string
+  // Quick-add paste-a-link door (Session 3.2): the site label for the "imported from {site}"
+  // chip (DESIGN's save-form §). Mutually exclusive with pendingAttachmentLabel in practice.
+  importedFrom?: string
   onSubmit: (values: PatternFormValues, images: PatternImages) => Promise<void>
   onCancel: () => void
 }) {
@@ -137,6 +141,16 @@ export function PatternForm({
             <Paperclip size={16} strokeWidth={2} aria-hidden="true" />
             <span>Will attach “{pendingAttachmentLabel}” when you save.</span>
           </p>
+        )}
+
+        {importedFrom && (
+          <span
+            className="inline-flex items-center gap-1.5 self-start rounded-full px-3 py-1.5 text-sm font-semibold"
+            style={{ background: 'var(--patch-lilac-soft)', color: 'var(--patch-lilac-deep)' }}
+          >
+            <Link size={14} strokeWidth={2} aria-hidden="true" />
+            imported from {importedFrom}
+          </span>
         )}
 
         <Field label="Craft" error={errors.craft?.message}>

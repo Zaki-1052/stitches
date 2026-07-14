@@ -1,14 +1,16 @@
 // web/src/features/patterns/components/QuickAddSheet.tsx — the dock ➕ quick-add sheet (DESIGN
-// §9's import doors; the paste-a-link door joins in Session 3.2). "Add a file" runs the shared
-// useAddFileDoor hook (also behind Home's doors row) — pdfjs page-1 → WebP for PDFs (soft-fail),
-// the §8 pipeline for images (hard-fail) — and lands on /patterns/new pre-filled. "Type it in"
-// is the blank form. The hidden file input lives inside the <dialog> so the picker opens from
-// the button's own user gesture; pick errors render inline because the dialog's top layer would
-// paint over any toast.
+// §9's import doors: Paste a link · Add a file · Type it in). "Paste a link" runs the shared
+// usePasteLinkDoor hook — clipboard → importer extract → pre-filled form (soft-fail: URL-only
+// form + gentle toast). "Add a file" runs useAddFileDoor (also behind Home's doors row) — pdfjs
+// page-1 → WebP for PDFs (soft-fail), the §8 pipeline for images (hard-fail) — and lands on
+// /patterns/new pre-filled. "Type it in" is the blank form. The hidden file input lives inside
+// the <dialog> so the picker opens from the button's own user gesture; door errors render
+// inline because the dialog's top layer would paint over any toast.
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
-import { FileUp, PenLine } from 'lucide-react'
+import { ClipboardPaste, FileUp, PenLine } from 'lucide-react'
 import { useAddFileDoor } from '../useAddFileDoor.ts'
+import { usePasteLinkDoor } from '../usePasteLinkDoor.ts'
 
 function Door({
   icon,
@@ -48,17 +50,21 @@ export function QuickAddSheet({ open, onClose }: { open: boolean; onClose: () =>
   const dialogRef = useRef<HTMLDialogElement>(null)
   const navigate = useNavigate()
   const { busy, error, clearError, inputRef, onInputChange } = useAddFileDoor(onClose)
+  const paste = usePasteLinkDoor(onClose)
+  const clearPasteError = paste.clearError
+  const anyBusy = busy || paste.busy
 
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return
     if (open && !dialog.open) {
       clearError()
+      clearPasteError()
       dialog.showModal()
     } else if (!open && dialog.open) {
       dialog.close()
     }
-  }, [open, clearError])
+  }, [open, clearError, clearPasteError])
 
   return (
     <dialog ref={dialogRef} className="modal modal-bottom" onClose={onClose}>
@@ -72,6 +78,22 @@ export function QuickAddSheet({ open, onClose }: { open: boolean; onClose: () =>
 
         <Door
           icon={
+            paste.busy ? (
+              <span className="loading loading-spinner" />
+            ) : (
+              <ClipboardPaste size={28} strokeWidth={2} aria-hidden="true" />
+            )
+          }
+          title="Paste a link"
+          caption={paste.busy ? 'Fetching that page…' : 'A pattern page from the web'}
+          soft="var(--patch-lilac-soft)"
+          deep="var(--patch-lilac-deep)"
+          disabled={anyBusy}
+          onPress={paste.onPress}
+        />
+
+        <Door
+          icon={
             busy ? (
               <span className="loading loading-spinner" />
             ) : (
@@ -82,7 +104,7 @@ export function QuickAddSheet({ open, onClose }: { open: boolean; onClose: () =>
           caption={busy ? 'Reading your file…' : 'A PDF or a photo of a pattern'}
           soft="var(--patch-blue-soft)"
           deep="var(--patch-blue-deep)"
-          disabled={busy}
+          disabled={anyBusy}
           onPress={() => inputRef.current?.click()}
         />
 
@@ -92,7 +114,7 @@ export function QuickAddSheet({ open, onClose }: { open: boolean; onClose: () =>
           caption="Start from a blank form"
           soft="var(--patch-mint-soft)"
           deep="var(--patch-mint-deep)"
-          disabled={busy}
+          disabled={anyBusy}
           onPress={() => {
             onClose()
             navigate('/patterns/new')
@@ -100,6 +122,7 @@ export function QuickAddSheet({ open, onClose }: { open: boolean; onClose: () =>
         />
 
         {error && <p className="text-error text-sm">{error}</p>}
+        {paste.error && <p className="text-error text-sm">{paste.error}</p>}
 
         <input
           ref={inputRef}
@@ -110,7 +133,7 @@ export function QuickAddSheet({ open, onClose }: { open: boolean; onClose: () =>
         />
       </div>
       <form method="dialog" className="modal-backdrop">
-        <button aria-label="Close" disabled={busy}>
+        <button aria-label="Close" disabled={anyBusy}>
           close
         </button>
       </form>
