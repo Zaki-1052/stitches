@@ -2,7 +2,7 @@
 // chips → bottom sheet, grid/list toggle, all state in URL search params. Every in-page change
 // REPLACES the history entry — the Library stays one entry, so back from a detail restores the
 // exact filtered state and back from the Library exits in one press. This screen is the viewer's
-// own shelf (queries hard-filter owner); friends' shared patterns arrive with Phase 4's feed.
+// own shelf (queries hard-filter owner); friends' shared patterns live in /friends.
 import { useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { LayoutGrid, Rows3 } from 'lucide-react'

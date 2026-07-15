@@ -27,6 +27,7 @@ import LibraryPage from './routes/LibraryPage.tsx'
 import PatternDetailPage from './routes/PatternDetailPage.tsx'
 import PatternFormPage from './routes/PatternFormPage.tsx'
 import ProjectsPage from './routes/ProjectsPage.tsx'
+import FriendsPage from './routes/FriendsPage.tsx'
 import ProjectDetailPage from './routes/ProjectDetailPage.tsx'
 import ProjectFormPage from './routes/ProjectFormPage.tsx'
 import CounterPage from './routes/CounterPage.tsx'
@@ -49,6 +50,7 @@ const router = createBrowserRouter([
           { index: true, element: <HomePage /> },
           { path: 'patterns', element: <LibraryPage /> },
           { path: 'projects', element: <ProjectsPage /> },
+          { path: 'friends', element: <FriendsPage /> },
           { path: 'tokens', element: <TokensPage /> },
         ],
       },

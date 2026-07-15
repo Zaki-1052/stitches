@@ -1,10 +1,10 @@
 // web/src/components/Dock.tsx — bottom navigation (DESIGN §8). daisyUI `dock` (fixed, safe-area
 // aware) with a raised 56px center "+" (blue circle, espresso plus). Slots: Home · Library · ➕ ·
-// Projects; Friends joins as a 5th in the sharing phase. ➕ opens the quick-add sheet (file door
-// landed in 1.3; the paste-a-link door joins in 3.2).
+// Projects · Friends (the 5th slot landed in 4.1; ➕ stays the center child). ➕ opens the
+// quick-add sheet with its three doors.
 import { useState } from 'react'
 import { NavLink } from 'react-router'
-import { House, Library, FolderHeart, Plus } from 'lucide-react'
+import { House, Library, FolderHeart, Plus, UsersRound } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { QuickAddSheet } from '../features/patterns/components/QuickAddSheet.tsx'
 
@@ -49,6 +49,7 @@ export function Dock() {
         </button>
 
         <DockTab to="/projects" label="Projects" icon={FolderHeart} />
+        <DockTab to="/friends" label="Friends" icon={UsersRound} />
       </nav>
 
       <QuickAddSheet open={quickAddOpen} onClose={() => setQuickAddOpen(false)} />

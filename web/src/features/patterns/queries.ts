@@ -3,8 +3,8 @@
 // and journal reads live in features/projects/queries.ts.
 //
 // The Library hard-filters `owner = viewer` even though the PB list rule would also return
-// friends-shared records: this screen is *your* shelf; the Friends feed (Phase 4) is where
-// shared patterns surface.
+// friends-shared records: this screen is *your* shelf; the Friends feed
+// (features/friends/queries.ts) is where shared patterns surface.
 import { useQuery } from '@tanstack/react-query'
 import { pb } from '../../lib/pb.ts'
 import { useAuth } from '../../lib/auth.tsx'
@@ -83,7 +83,8 @@ export function usePattern(id: string) {
   return useQuery({
     queryKey: patternKeys.detail(id),
     enabled: id !== '',
-    queryFn: () => pb.collection('patterns').getOne<PatternRecord>(id, { expand: 'tags' }),
+    // `owner` feeds the shared-by chip on a friend's pattern (users read rules are any-authed).
+    queryFn: () => pb.collection('patterns').getOne<PatternRecord>(id, { expand: 'tags,owner' }),
   })
 }
 

@@ -67,6 +67,14 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
 
 // ---- Record shapes as PB returns them (unset select = '', unset number = 0). ----
 
+// Public slice of the `users` auth collection (list/view any-authed per Session 0.2; email
+// stays hidden behind emailVisibility). What friends' avatars and names render from.
+export interface UserRecord {
+  id: string
+  name: string
+  avatar: string
+}
+
 export interface TagRecord {
   id: string
   owner: string
@@ -98,7 +106,7 @@ export interface PatternRecord {
   notes: string
   created: string
   updated: string
-  expand?: { tags?: TagRecord[] }
+  expand?: { tags?: TagRecord[]; owner?: UserRecord }
 }
 
 // Minimal projection used for the §7.9 made-✓ badge, the delete pre-check, and the
@@ -125,7 +133,7 @@ export interface ProjectRecord {
   visibility: Visibility | ''
   created: string
   updated: string
-  expand?: { pattern?: PatternRecord }
+  expand?: { pattern?: PatternRecord; owner?: UserRecord }
 }
 
 // A project's diary line (SPEC §7): visibility inherited from the project; photos time-anchored

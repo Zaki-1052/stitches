@@ -1,5 +1,6 @@
 // web/src/components/AppShell.tsx — the authenticated app frame: header, scrollable content, and
-// the bottom dock. Dock destinations (Home / Library / Projects) render through the <Outlet/>.
+// the bottom dock. Dock destinations (Home / Library / Projects / Friends) render through the
+// <Outlet/>.
 // The dock is position:fixed (daisyUI), so content reserves bottom padding to clear it plus the
 // iOS home-indicator safe area.
 import { Outlet } from 'react-router'

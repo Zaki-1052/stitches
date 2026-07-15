@@ -30,6 +30,7 @@ import { CountersCard } from '../features/counters/components/CountersCard.tsx'
 import { useCountersRealtime } from '../features/counters/realtime.ts'
 import { ConfirmDeleteDialog } from '../features/projects/components/ConfirmDeleteDialog.tsx'
 import { VisibilityToggle } from '../features/patterns/components/VisibilityToggle.tsx'
+import { SharedByChip } from '../features/friends/components/SharedByChip.tsx'
 
 function Frame({ right, children }: { right?: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -49,7 +50,10 @@ export default function ProjectDetailPage() {
   const projectQuery = useProject(id)
   const quickUpdate = useQuickUpdateProject()
   const deleteProject = useDeleteProject()
-  useCountersRealtime(id) // SPEC §11: counters realtime, subscribed per open project
+  // SPEC §11: counters realtime, subscribed per open project — owners only. A viewer's
+  // subscription would be rule-filtered to silence anyway; don't open the SSE topic at all.
+  // (The `user &&` guard keeps undefined === undefined from passing while the project loads.)
+  useCountersRealtime(user && projectQuery.data?.owner === user.id ? id : '')
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [celebrating, setCelebrating] = useState(false)
@@ -185,6 +189,7 @@ export default function ProjectDetailPage() {
               </span>
             )}
           </div>
+          {!isOwner && <SharedByChip owner={project.expand?.owner} />}
         </div>
 
         {metaChips.length > 0 && (

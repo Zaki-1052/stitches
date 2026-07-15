@@ -1,9 +1,10 @@
 // web/src/routes/PatternDetailPage.tsx — /patterns/:id (DESIGN §9): hero, source chip, shelf
 // pill (owner-only quick mutation), meta chips, tags, sanitized notes, photo strip, projects
 // section (+ owner-only "Start a project"), attachments vault (owner-only), visibility toggle,
-// delete. A friend's shared pattern renders read-only — no edit/delete/shelf/visibility
-// affordances, and nothing hints at attachments (owner-only by rule; the card simply never
-// mounts). Friends starting their own project off a shared pattern waits for Phase 4.
+// delete. A friend's shared pattern renders read-only — a "shared by {name}" chip in the shelf
+// pill's slot, no edit/delete/shelf/visibility affordances, and nothing hints at attachments
+// (owner-only by rule; the card simply never mounts). The Start-a-project door stays owner-only
+// (starting a project off a friend's pattern isn't in the 4.1 brief).
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import DOMPurify from 'dompurify'
@@ -25,6 +26,7 @@ import { ShelfPill } from '../features/patterns/components/ShelfPill.tsx'
 import { VisibilityToggle } from '../features/patterns/components/VisibilityToggle.tsx'
 import { DeleteConfirmDialog } from '../features/patterns/components/DeleteConfirmDialog.tsx'
 import { AttachmentsCard } from '../features/patterns/components/AttachmentsCard.tsx'
+import { SharedByChip } from '../features/friends/components/SharedByChip.tsx'
 
 function Frame({ right, children }: { right?: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -182,7 +184,11 @@ export default function PatternDetailPage() {
           </div>
         </div>
 
-        {isOwner && <ShelfPill value={pattern.shelf || 'saved'} onChange={setShelf} />}
+        {isOwner ? (
+          <ShelfPill value={pattern.shelf || 'saved'} onChange={setShelf} />
+        ) : (
+          <SharedByChip owner={pattern.expand?.owner} />
+        )}
 
         <MetaChips pattern={pattern} />
 

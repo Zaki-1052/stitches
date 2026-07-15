@@ -1,0 +1,301 @@
+
+> stitches@0.0.0 verify:fresh
+> bash scripts/verify-fresh.sh
+
+verify-fresh: existing pb_data backed up to /Users/zakiralibhai/Documents/VS_Code/stitches/pb/pb_data.bak-20260714-224515
+verify-fresh: waiting for PocketBase to come up (migrations apply now)…
+2026/07/14 22:45:15 Server started at http://127.0.0.1:8090
+├─ REST API:  http://127.0.0.1:8090/api/
+└─ Dashboard: http://127.0.0.1:8090/_/
+
+(!) Launch the URL below in the browser if it hasn't been open already to create your first superuser account:
+http://127.0.0.1:8090/_/#/pbinstall/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2xsZWN0aW9uSWQiOiJwYmNfMzE0MjYzNTgyMyIsImV4cCI6MTc4NDA5NjExNSwiaWQiOiJyZjh4c2w1bHQ5NDA4Y2ciLCJyZWZyZXNoYWJsZSI6ZmFsc2UsInR5cGUiOiJhdXRoIn0.UEyvM7XrqBh4fKCoxUJPKZQV7F4Vlv1jMsZehkiEIwo
+(you can also create your first superuser by running: /Users/zakiralibhai/Documents/VS_Code/stitches/pb/pocketbase superuser upsert EMAIL PASS)
+
+
+verify-fresh: superuser upsert
+Successfully saved superuser "zara.1052.2510@gmail.com"!
+
+verify-fresh: seed (users + starter library)
+OK    cece@stitches.local (created)
+OK    friend@stitches.local (created)
+seed: users done — 2 created, 0 skipped
+OK    tag “amigurumi” (cece@stitches.local) (created)
+OK    tag “wearables” (cece@stitches.local) (created)
+OK    tag “gifts” (cece@stitches.local) (created)
+OK    pattern “Bee Amigurumi” (cece@stitches.local) (created)
+OK    pattern “Granny Square Cardigan” (cece@stitches.local) (created)
+OK    pattern “Mushroom Keychain” (cece@stitches.local) (created)
+OK    tag “blankets” (friend@stitches.local) (created)
+OK    tag “quick wins” (friend@stitches.local) (created)
+OK    pattern “Ripple Blanket” (friend@stitches.local) (created)
+OK    pattern “Cotton Dishcloth” (friend@stitches.local) (created)
+OK    pattern “Star Coaster” (friend@stitches.local) (created)
+seed: library done
+
+verify-fresh: rules-check — run 1
+rules-check: http://127.0.0.1:8090 · A=cece@stitches.local · B=friend@stitches.local
+
+--- phase 0: sweep leftovers ---
+sweep done
+
+--- phase 1: fixtures ---
+fixtures created (9 for A, 3 for B — cross-owner same-name tag included)
+
+--- phase 2: access matrix ---
+· anonymous sees nothing, can touch nothing
+PASS  anon list users → empty
+PASS  anon list tags → empty
+PASS  anon list patterns → empty
+PASS  anon list pattern_attachments → empty
+PASS  anon list projects → empty
+PASS  anon list journal_entries → empty
+PASS  anon list counters → empty
+PASS  anon view shared pattern → 404
+PASS  anon view shared project → 404
+PASS  anon view shared-project entry → 404
+PASS  anon create user (invite gate)
+PASS  anon create pattern
+PASS  anon update shared pattern
+PASS  anon delete shared pattern
+· users
+PASS  B lists users → sees A (authed read)
+PASS  B update A profile
+PASS  A update own profile
+· tags
+PASS  B lists tags → sees A tag (shared patterns must render tags)
+PASS  B update A tag
+PASS  B delete A tag
+PASS  A update own tag
+PASS  A duplicate (owner,name) tag → unique index
+PASS  A and B own same-named tags side by side (fixtures)
+· patterns
+PASS  A lists own private pattern
+PASS  A lists own shared pattern
+PASS  B lists A shared pattern
+PASS  B does not list A private pattern
+PASS  B views A shared pattern
+PASS  B view A private pattern → 404
+PASS  A updates own pattern (ordinary field)
+PASS  A owner-transfer own pattern → B
+PASS  B create pattern owned by A
+PASS  B update A shared pattern
+PASS  B delete A shared pattern
+· pattern_attachments — the copyright vault
+PASS  A lists own attachment
+PASS  A views own attachment
+PASS  B does NOT list attachment on A SHARED pattern (headline)
+PASS  B view attachment on A SHARED pattern → 404 (headline)
+PASS  B create attachment on A shared pattern
+PASS  B update A attachment
+PASS  B delete A attachment
+PASS  A updates attachment resending unchanged pattern (:changed lock stays open)
+PASS  A re-parents attachment to another own pattern (:changed lock)
+· pattern_attachments — protected file access (the token gate, Session 1.3)
+PASS  A creates attachment with a real file
+PASS  fetch protected file with NO token → denied
+PASS  B gets a file token of their own
+PASS  fetch protected file with B's token → denied (view rule re-checked per fetch)
+PASS  A gets a file token
+PASS  fetch protected file with A's token → 200 (owner playback)
+· projects
+PASS  B lists A shared project
+PASS  B does not list A private project
+PASS  B views A shared project
+PASS  B view A private project → 404
+PASS  B create project owned by A
+PASS  B update A shared project
+PASS  B delete A shared project
+PASS  A owner-transfer own project → B
+· projects ↔ patterns link guard
+PASS  B create project linking A PRIVATE pattern
+PASS  B create project linking A SHARED pattern (make-a-friend’s-pattern flow)
+PASS  B re-point own project to A PRIVATE pattern
+PASS  B re-point own project to A SHARED pattern
+PASS  B unlink own project
+PASS  A link-later: attach own pattern to own project
+PASS  A unlink own project again
+· journal_entries — visibility inherited from the project
+PASS  B lists entry on A SHARED project
+PASS  B does not list entry on A PRIVATE project
+PASS  B views entry on A shared project
+PASS  B view entry on A private project → 404
+PASS  B create entry on A shared project
+PASS  B update A entry
+PASS  B delete A entry
+PASS  A updates entry resending unchanged project (:changed lock stays open)
+PASS  A re-parents entry to another own project (:changed lock)
+· counters — personal process, never shared
+PASS  A lists own counter
+PASS  B does NOT list counter on A SHARED project (headline twin)
+PASS  B view counter on A SHARED project → 404 (headline twin)
+PASS  B create counter on A shared project
+PASS  B update A counter
+PASS  B delete A counter
+PASS  A updates counter resending unchanged project (:changed lock stays open)
+PASS  A re-parents counter to another own project (:changed lock)
+PASS  A creates linked counter (resets_with self-relation)
+
+--- phase 3: behavior & cascade proofs (doubles as cleanup) ---
+PASS  A delete shared pattern WHILE B project links it (blocked-while-linked)
+PASS  …and the pattern still exists afterwards
+PASS  B deletes own linking project
+PASS  A delete shared pattern once unlinked
+PASS  …attachment cascaded away with its pattern → 404
+PASS  A deletes shared project
+PASS  …journal entry cascaded away with its project → 404
+PASS  …counter cascaded away with its project → 404
+PASS  …linked counter cascaded away too → 404
+PASS  A delete unlinked private pattern (guard permits zero back-links)
+PASS  A deletes private project (entry cascades)
+PASS  A deletes own tag
+PASS  B deletes own pattern
+PASS  B deletes own project
+PASS  B deletes own tag
+
+--- final sweep: zero fixtures left behind ---
+PASS  A sees no leftover tags fixtures
+PASS  A sees no leftover patterns fixtures
+PASS  A sees no leftover projects fixtures
+PASS  A sees no leftover counters fixtures
+PASS  B sees no leftover tags fixtures
+PASS  B sees no leftover patterns fixtures
+PASS  B sees no leftover projects fixtures
+PASS  B sees no leftover counters fixtures
+
+rules-check: 105 passed, 0 failed
+
+verify-fresh: rules-check — run 2 (sweep idempotency)
+rules-check: http://127.0.0.1:8090 · A=cece@stitches.local · B=friend@stitches.local
+
+--- phase 0: sweep leftovers ---
+sweep done
+
+--- phase 1: fixtures ---
+fixtures created (9 for A, 3 for B — cross-owner same-name tag included)
+
+--- phase 2: access matrix ---
+· anonymous sees nothing, can touch nothing
+PASS  anon list users → empty
+PASS  anon list tags → empty
+PASS  anon list patterns → empty
+PASS  anon list pattern_attachments → empty
+PASS  anon list projects → empty
+PASS  anon list journal_entries → empty
+PASS  anon list counters → empty
+PASS  anon view shared pattern → 404
+PASS  anon view shared project → 404
+PASS  anon view shared-project entry → 404
+PASS  anon create user (invite gate)
+PASS  anon create pattern
+PASS  anon update shared pattern
+PASS  anon delete shared pattern
+· users
+PASS  B lists users → sees A (authed read)
+PASS  B update A profile
+PASS  A update own profile
+· tags
+PASS  B lists tags → sees A tag (shared patterns must render tags)
+PASS  B update A tag
+PASS  B delete A tag
+PASS  A update own tag
+PASS  A duplicate (owner,name) tag → unique index
+PASS  A and B own same-named tags side by side (fixtures)
+· patterns
+PASS  A lists own private pattern
+PASS  A lists own shared pattern
+PASS  B lists A shared pattern
+PASS  B does not list A private pattern
+PASS  B views A shared pattern
+PASS  B view A private pattern → 404
+PASS  A updates own pattern (ordinary field)
+PASS  A owner-transfer own pattern → B
+PASS  B create pattern owned by A
+PASS  B update A shared pattern
+PASS  B delete A shared pattern
+· pattern_attachments — the copyright vault
+PASS  A lists own attachment
+PASS  A views own attachment
+PASS  B does NOT list attachment on A SHARED pattern (headline)
+PASS  B view attachment on A SHARED pattern → 404 (headline)
+PASS  B create attachment on A shared pattern
+PASS  B update A attachment
+PASS  B delete A attachment
+PASS  A updates attachment resending unchanged pattern (:changed lock stays open)
+PASS  A re-parents attachment to another own pattern (:changed lock)
+· pattern_attachments — protected file access (the token gate, Session 1.3)
+PASS  A creates attachment with a real file
+PASS  fetch protected file with NO token → denied
+PASS  B gets a file token of their own
+PASS  fetch protected file with B's token → denied (view rule re-checked per fetch)
+PASS  A gets a file token
+PASS  fetch protected file with A's token → 200 (owner playback)
+· projects
+PASS  B lists A shared project
+PASS  B does not list A private project
+PASS  B views A shared project
+PASS  B view A private project → 404
+PASS  B create project owned by A
+PASS  B update A shared project
+PASS  B delete A shared project
+PASS  A owner-transfer own project → B
+· projects ↔ patterns link guard
+PASS  B create project linking A PRIVATE pattern
+PASS  B create project linking A SHARED pattern (make-a-friend’s-pattern flow)
+PASS  B re-point own project to A PRIVATE pattern
+PASS  B re-point own project to A SHARED pattern
+PASS  B unlink own project
+PASS  A link-later: attach own pattern to own project
+PASS  A unlink own project again
+· journal_entries — visibility inherited from the project
+PASS  B lists entry on A SHARED project
+PASS  B does not list entry on A PRIVATE project
+PASS  B views entry on A shared project
+PASS  B view entry on A private project → 404
+PASS  B create entry on A shared project
+PASS  B update A entry
+PASS  B delete A entry
+PASS  A updates entry resending unchanged project (:changed lock stays open)
+PASS  A re-parents entry to another own project (:changed lock)
+· counters — personal process, never shared
+PASS  A lists own counter
+PASS  B does NOT list counter on A SHARED project (headline twin)
+PASS  B view counter on A SHARED project → 404 (headline twin)
+PASS  B create counter on A shared project
+PASS  B update A counter
+PASS  B delete A counter
+PASS  A updates counter resending unchanged project (:changed lock stays open)
+PASS  A re-parents counter to another own project (:changed lock)
+PASS  A creates linked counter (resets_with self-relation)
+
+--- phase 3: behavior & cascade proofs (doubles as cleanup) ---
+PASS  A delete shared pattern WHILE B project links it (blocked-while-linked)
+PASS  …and the pattern still exists afterwards
+PASS  B deletes own linking project
+PASS  A delete shared pattern once unlinked
+PASS  …attachment cascaded away with its pattern → 404
+PASS  A deletes shared project
+PASS  …journal entry cascaded away with its project → 404
+PASS  …counter cascaded away with its project → 404
+PASS  …linked counter cascaded away too → 404
+PASS  A delete unlinked private pattern (guard permits zero back-links)
+PASS  A deletes private project (entry cascades)
+PASS  A deletes own tag
+PASS  B deletes own pattern
+PASS  B deletes own project
+PASS  B deletes own tag
+
+--- final sweep: zero fixtures left behind ---
+PASS  A sees no leftover tags fixtures
+PASS  A sees no leftover patterns fixtures
+PASS  A sees no leftover projects fixtures
+PASS  A sees no leftover counters fixtures
+PASS  B sees no leftover tags fixtures
+PASS  B sees no leftover patterns fixtures
+PASS  B sees no leftover projects fixtures
+PASS  B sees no leftover counters fixtures
+
+rules-check: 105 passed, 0 failed
+
+verify-fresh: ALL GREEN — fresh migrations, seed, and rules-check ×2.
+verify-fresh: next → npm run dev, then log in as cece@stitches.local

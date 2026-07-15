@@ -3,7 +3,7 @@
 // refreshes lists, details, the library's made-✓ badge, and the pattern-delete pre-check.
 //
 // Like the Library, the projects list hard-filters `owner = viewer`: this screen is *your*
-// basket; friends' shared projects surface in the Phase 4 feed.
+// basket; friends' shared makes surface in the Friends feed (features/friends/queries.ts).
 import { useQuery } from '@tanstack/react-query'
 import { pb } from '../../lib/pb.ts'
 import { useAuth } from '../../lib/auth.tsx'
@@ -56,7 +56,9 @@ export function useProject(id: string) {
   return useQuery({
     queryKey: projectKeys.detail(id),
     enabled: id !== '',
-    queryFn: () => pb.collection('projects').getOne<ProjectRecord>(id, { expand: 'pattern' }),
+    // `owner` feeds the shared-by chip on a friend's project (users read rules are any-authed).
+    queryFn: () =>
+      pb.collection('projects').getOne<ProjectRecord>(id, { expand: 'pattern,owner' }),
   })
 }
 
