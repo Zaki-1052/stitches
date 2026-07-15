@@ -11,8 +11,9 @@ import { todayLocalISO } from '../../../lib/dates.ts'
 import { useToast } from '../../shared/toast.tsx'
 import { normalizePbError } from '../../shared/errors.ts'
 import { revokePreview } from '../../shared/imagePipeline.ts'
+import { useRevokeOnUnmount } from '../../shared/useRevokeOnUnmount.ts'
 import type { PhotosState } from '../../patterns/formData.ts'
-import { NotesEditor } from '../../patterns/components/NotesEditor.tsx'
+import { LazyNotesEditor as NotesEditor } from '../../patterns/components/LazyNotesEditor.tsx'
 import { PhotosField } from '../../patterns/components/PhotosField.tsx'
 import { buildEntryFormData } from '../formData.ts'
 import { useCreateEntry, useUpdateEntry } from '../mutations.ts'
@@ -45,6 +46,11 @@ export function EntryComposer({
     added: [],
   })
   const [photosBusy, setPhotosBusy] = useState(false)
+
+  // 4.2 (DECISIONS 2026-07-13 KNOWN DEFERRED): added-photo previews must be revoked however the
+  // composer goes away — including a backdrop-dismissed sheet, which unmounts it without
+  // touching Save/Cancel.
+  useRevokeOnUnmount(() => photos.added.map((image) => image.previewUrl))
 
   const keptPhotos =
     photos.existing.length - photos.removed.length + photos.added.length

@@ -32,7 +32,7 @@ function Frame({ right, children }: { right?: React.ReactNode; children: React.R
   return (
     <div className="min-h-dvh bg-base-200 text-base-content">
       <BackBar right={right} />
-      {children}
+      <div className="w-full lg:mx-auto lg:max-w-3xl">{children}</div>
     </div>
   )
 }

@@ -24,12 +24,13 @@ import { useToast } from '../../shared/toast.tsx'
 import type { ProcessedImage } from '../../shared/imagePipeline.ts'
 import type { PatternImages, PhotosState, ThumbnailState } from '../formData.ts'
 import { HookAliasReadout } from './HookAliasReadout.tsx'
-import { NotesEditor } from './NotesEditor.tsx'
+import { LazyNotesEditor as NotesEditor } from './LazyNotesEditor.tsx'
 import { PhotosField } from './PhotosField.tsx'
 import { SaveBar } from './SaveBar.tsx'
 import { ShelfPill } from './ShelfPill.tsx'
 import { TagPicker } from './TagPicker.tsx'
 import { ThumbnailField } from './ThumbnailField.tsx'
+import { useRevokeOnUnmount } from '../../shared/useRevokeOnUnmount.ts'
 
 const FORM_FIELDS = Object.keys(patternFormSchema.shape)
 
@@ -94,6 +95,13 @@ export function PatternForm({
   })
   const [thumbnailBusy, setThumbnailBusy] = useState(false)
   const [photosBusy, setPhotosBusy] = useState(false)
+
+  // 4.2: previews owned here (the file-door-seeded thumbnail included) release on any exit —
+  // save navigates away, Cancel, BackBar, browser back, the location.key remount.
+  useRevokeOnUnmount(() => [
+    ...(thumbnail.kind === 'new' ? [thumbnail.image.previewUrl] : []),
+    ...photos.added.map((image) => image.previewUrl),
+  ])
 
   const hookMm = watch('hook_mm')
 

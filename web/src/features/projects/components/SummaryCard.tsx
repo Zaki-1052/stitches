@@ -9,7 +9,7 @@ import { Pencil, PenLine } from 'lucide-react'
 import type { ProjectRecord } from '../../../lib/schema.ts'
 import { useToast } from '../../shared/toast.tsx'
 import { normalizePbError } from '../../shared/errors.ts'
-import { NotesEditor } from '../../patterns/components/NotesEditor.tsx'
+import { LazyNotesEditor as NotesEditor } from '../../patterns/components/LazyNotesEditor.tsx'
 import { useQuickUpdateProject } from '../mutations.ts'
 
 export function SummaryCard({ project, isOwner }: { project: ProjectRecord; isOwner: boolean }) {

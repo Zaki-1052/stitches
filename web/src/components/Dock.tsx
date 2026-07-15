@@ -1,12 +1,21 @@
-// web/src/components/Dock.tsx — bottom navigation (DESIGN §8). daisyUI `dock` (fixed, safe-area
-// aware) with a raised 56px center "+" (blue circle, espresso plus). Slots: Home · Library · ➕ ·
-// Projects · Friends (the 5th slot landed in 4.1; ➕ stays the center child). ➕ opens the
-// quick-add sheet with its three doors.
+// web/src/components/Dock.tsx — primary navigation (DESIGN §8). On phones: daisyUI `dock`
+// (fixed, safe-area aware) with a raised 56px center "+" (blue circle, espresso plus). Slots:
+// Home · Library · ➕ · Projects · Friends. At lg+ the dock becomes a slim top bar (DESIGN §5)
+// rendered as a second plain-Tailwind nav — daisyUI bakes the dock's column layout into
+// `.dock > *` compound selectors, so a separate markup variant beats fighting its specificity.
+// Both variants share routes and the same ➕ handler opening the quick-add sheet.
 import { useState } from 'react'
 import { NavLink } from 'react-router'
 import { House, Library, FolderHeart, Plus, UsersRound } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { QuickAddSheet } from '../features/patterns/components/QuickAddSheet.tsx'
+
+const TABS: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
+  { to: '/', label: 'Home', icon: House, end: true },
+  { to: '/patterns', label: 'Library', icon: Library },
+  { to: '/projects', label: 'Projects', icon: FolderHeart },
+  { to: '/friends', label: 'Friends', icon: UsersRound },
+]
 
 function DockTab({
   to,
@@ -27,13 +36,37 @@ function DockTab({
   )
 }
 
+function TopBarTab({
+  to,
+  label,
+  icon: Icon,
+  end,
+}: {
+  to: string
+  label: string
+  icon: LucideIcon
+  end?: boolean
+}) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className="flex h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold"
+      style={({ isActive }) => (isActive ? { background: 'var(--patch-blue-soft)' } : undefined)}
+    >
+      <Icon size={20} strokeWidth={2} />
+      {label}
+    </NavLink>
+  )
+}
+
 export function Dock() {
   const [quickAddOpen, setQuickAddOpen] = useState(false)
   return (
     <>
-      <nav className="dock" style={{ background: 'var(--color-base-100)' }}>
-        <DockTab to="/" label="Home" icon={House} end />
-        <DockTab to="/patterns" label="Library" icon={Library} />
+      <nav className="dock lg:hidden" style={{ background: 'var(--color-base-100)' }}>
+        <DockTab {...TABS[0]} />
+        <DockTab {...TABS[1]} />
 
         <button type="button" aria-label="Add a pattern" onClick={() => setQuickAddOpen(true)}>
           <span
@@ -48,8 +81,30 @@ export function Dock() {
           </span>
         </button>
 
-        <DockTab to="/projects" label="Projects" icon={FolderHeart} />
-        <DockTab to="/friends" label="Friends" icon={UsersRound} />
+        <DockTab {...TABS[2]} />
+        <DockTab {...TABS[3]} />
+      </nav>
+
+      <nav
+        className="hidden items-center justify-center gap-1 border-b py-2 lg:flex"
+        style={{ borderColor: 'var(--color-base-300)', background: 'var(--color-base-100)' }}
+      >
+        {TABS.map((tab) => (
+          <TopBarTab key={tab.to} {...tab} />
+        ))}
+        <button
+          type="button"
+          aria-label="Add a pattern"
+          onClick={() => setQuickAddOpen(true)}
+          className="ml-2 grid size-11 place-items-center rounded-full"
+          style={{
+            background: 'var(--color-primary)',
+            color: 'var(--color-base-content)',
+            boxShadow: 'var(--shadow-soft)',
+          }}
+        >
+          <Plus size={24} strokeWidth={2.5} />
+        </button>
       </nav>
 
       <QuickAddSheet open={quickAddOpen} onClose={() => setQuickAddOpen(false)} />

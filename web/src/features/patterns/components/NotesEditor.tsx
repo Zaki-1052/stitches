@@ -36,15 +36,13 @@ function ToolbarButton({
   )
 }
 
-export function NotesEditor({
-  value,
-  onChange,
-  ariaLabel = 'Notes',
-}: {
+export interface NotesEditorProps {
   value: string
   onChange: (html: string) => void
   ariaLabel?: string
-}) {
+}
+
+export function NotesEditor({ value, onChange, ariaLabel = 'Notes' }: NotesEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({

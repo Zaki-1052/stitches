@@ -2,7 +2,11 @@
 // subpage (the canonical BackBar pattern from Settings). Edit mode waits for the record before
 // mounting the form so defaults are ready at mount, and redirects non-owners to the read-only
 // detail — PB rules would reject the write anyway; this is the UX-sugar layer (SPEC §15).
-import { Navigate, useNavigate, useParams } from 'react-router'
+// The default export remounts the page per navigation (key={location.key}, fresh on every
+// navigate() even to the same path) so a ➕ quick-add pick made while already on /patterns/new
+// re-consumes the pending-import bridge instead of being dropped (the 1.3 known gap). Wiping a
+// half-typed form is the correct semantics: a new file/link means starting over.
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router'
 import { BackBar } from '../components/BackBar.tsx'
 import { useAuth } from '../lib/auth.tsx'
 import { patternFormDefaults, patternToFormValues } from '../lib/schema.ts'
@@ -21,12 +25,17 @@ function Frame({ title, children }: { title: string; children: React.ReactNode }
   return (
     <div className="min-h-dvh bg-base-200 text-base-content">
       <BackBar title={title} />
-      {children}
+      <div className="w-full lg:mx-auto lg:max-w-3xl">{children}</div>
     </div>
   )
 }
 
 export default function PatternFormPage() {
+  const location = useLocation()
+  return <PatternFormPageInner key={location.key} />
+}
+
+function PatternFormPageInner() {
   const { id = '' } = useParams()
   const mode: 'create' | 'edit' = id ? 'edit' : 'create'
   const navigate = useNavigate()

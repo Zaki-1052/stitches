@@ -20,7 +20,7 @@ function Frame({ title, children }: { title: string; children: React.ReactNode }
   return (
     <div className="min-h-dvh bg-base-200 text-base-content">
       <BackBar title={title} />
-      {children}
+      <div className="w-full lg:mx-auto lg:max-w-3xl">{children}</div>
     </div>
   )
 }

@@ -1,11 +1,12 @@
 {
   "name": "@stitches/web",
   "private": true,
-  "version": "0.4.1",
+  "version": "0.4.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "icons": "pwa-assets-generator",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -34,6 +35,7 @@
     "@tailwindcss/vite": "4.3.2",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
+    "@vite-pwa/assets-generator": "1.0.2",
     "@vitejs/plugin-react": "5.2.0",
     "daisyui": "5.6.16",
     "eslint": "9.39.5",
@@ -44,6 +46,7 @@
     "tailwindcss": "4.3.2",
     "typescript": "5.9.3",
     "typescript-eslint": "8.63.0",
-    "vite": "7.3.6"
+    "vite": "7.3.6",
+    "vite-plugin-pwa": "1.2.0"
   }
 }

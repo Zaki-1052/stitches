@@ -1,0 +1,18 @@
+<!-- web/public/favicon.svg — the Stitches app icon master (concept A, yarn ball; Zara's pick,
+     Session 4.2). Serves directly as the SVG favicon and is the single source for every PNG
+     `npm run icons` generates (pwa-assets.config.ts). Full-square on purpose: every OS applies
+     its own mask, and iOS composites transparent corners onto black. All art sits inside the
+     center 80% maskable safe zone (radius ~205 of 256), so the one master feeds the maskable
+     variant too — the concept board's trailing thread is curled in for that reason.
+     Colors mirror theme.css tokens (this is an asset, not a component): #8CCAEE patch-blue /
+     primary · #FFFCF6 base-100 · #4A3C33 base-content espresso · #F6D97E patch-butter. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#8CCAEE"/>
+  <circle cx="256" cy="256" r="150" fill="#FFFCF6"/>
+  <path d="M136 218 Q256 152 378 222" fill="none" stroke="#4A3C33" stroke-width="12" stroke-linecap="round"/>
+  <path d="M120 278 Q256 218 394 284" fill="none" stroke="#4A3C33" stroke-width="12" stroke-linecap="round"/>
+  <path d="M148 334 Q256 284 366 338" fill="none" stroke="#4A3C33" stroke-width="12" stroke-linecap="round"/>
+  <path d="M196 176 l26 26 M222 176 l-26 26" fill="none" stroke="#4A3C33" stroke-width="11" stroke-linecap="round"/>
+  <path d="M391 306 Q430 326 414 354 Q400 378 376 384" fill="none" stroke="#4A3C33" stroke-width="12" stroke-linecap="round"/>
+  <path d="M140 125 l7 18 18 7 -18 7 -7 18 -7 -18 -18 -7 18 -7 Z" fill="#F6D97E"/>
+</svg>

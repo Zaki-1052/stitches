@@ -13,6 +13,7 @@ import type { ProjectFormValues, ProjectRecord } from '../../../lib/schema.ts'
 import { applyFieldErrors, normalizePbError } from '../../shared/errors.ts'
 import { useToast } from '../../shared/toast.tsx'
 import { usePatternOptions } from '../../patterns/queries.ts'
+import { useRevokeOnUnmount } from '../../shared/useRevokeOnUnmount.ts'
 import type { ThumbnailState } from '../../patterns/formData.ts'
 import { HookAliasReadout } from '../../patterns/components/HookAliasReadout.tsx'
 import { SaveBar } from '../../patterns/components/SaveBar.tsx'
@@ -100,6 +101,9 @@ export function ProjectForm({
 
   const [cover, setCover] = useState<ThumbnailState>({ kind: 'unchanged' })
   const [coverBusy, setCoverBusy] = useState(false)
+
+  // 4.2: a picked-but-unsaved cover preview releases on any exit (see useRevokeOnUnmount).
+  useRevokeOnUnmount(() => (cover.kind === 'new' ? [cover.image.previewUrl] : []))
 
   const optionsQuery = usePatternOptions()
   const options = optionsQuery.data ?? []

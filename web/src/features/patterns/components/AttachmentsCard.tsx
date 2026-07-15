@@ -22,7 +22,7 @@ import {
   useUpdateAttachment,
 } from '../attachmentMutations.ts'
 import { useUpdatePattern } from '../mutations.ts'
-import { NotesEditor } from './NotesEditor.tsx'
+import { LazyNotesEditor as NotesEditor } from './LazyNotesEditor.tsx'
 
 function isPdfFilename(filename: string): boolean {
   return /\.pdf$/i.test(filename)

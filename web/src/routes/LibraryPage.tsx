@@ -88,7 +88,12 @@ export default function LibraryPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="sticky top-0 z-20 flex flex-col gap-2.5 bg-base-200 px-5 pt-1 pb-2.5">
+      {/* Sticky bars sit at the visual top once scrolled — in standalone PWA mode that is the
+          notch/status bar, so the top inset pads here too (4.2, DESIGN §12 #3). */}
+      <div
+        className="sticky top-0 z-20 flex flex-col gap-2.5 bg-base-200 px-5 pb-2.5"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.25rem)' }}
+      >
         <div className="flex items-center gap-2">
           <div className="flex-1">
             <SearchBar value={filters.q} onCommit={commitSearch} />

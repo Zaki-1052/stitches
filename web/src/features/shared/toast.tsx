@@ -39,7 +39,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           className="toast toast-top toast-center z-50"
           style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.5rem)' }}
         >
-          <div role="status" className={`alert ${TONE_CLASS[toast.tone]}`}>
+          {/* Keyed so a replacing toast re-runs base.css's toast-pop entrance. */}
+          <div
+            key={`${toast.tone}:${toast.message}`}
+            role="status"
+            className={`alert ${TONE_CLASS[toast.tone]}`}
+          >
             <span>{toast.message}</span>
           </div>
         </div>

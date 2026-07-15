@@ -9,7 +9,10 @@
   },
   "scripts": {
     "dev": "bash scripts/dev.sh",
+    "build": "npm run build --workspace web",
+    "icons": "npm run icons --workspace web",
     "lint": "npm run lint --workspace web",
+    "preview": "npm run preview --workspace web",
     "seed": "node --env-file-if-exists=.env scripts/seed.mjs",
     "verify:contrast": "node scripts/verify/contrast.mjs",
     "verify:importer": "node --env-file-if-exists=.env scripts/verify/importer-check.mjs",

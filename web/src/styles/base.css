@@ -17,10 +17,50 @@ label,
   touch-action: manipulation;
 }
 
+/* Content clears the fixed dock + iOS home indicator on phones. At lg+ the dock renders as a
+   top bar in normal flow (DESIGN §5), so nothing needs reserving. */
+.dock-space {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 1024px) {
+  .dock-space {
+    padding-bottom: 0;
+  }
+}
+
 /* Visible focus ring for keyboard users (§13): 2px patch-blue-deep, 2px offset. */
 :focus-visible {
   outline: 2px solid var(--patch-blue-deep);
   outline-offset: 2px;
+}
+
+/* We ship our own clear button on search inputs — WebKit's native ⓧ would double up (§12). */
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Micro-animations (DESIGN §7): 150–250 ms, transform/opacity only, durations and easing from
+   the theme.css motion tokens. Buttons press to scale(0.97). Anchors are excluded for now —
+   iOS Safari's :active on links is unreliable without a document touch listener; revisit after
+   the 4.2 device walk. The reduced-motion block below zeroes all of this for anyone opted out. */
+button:not(:disabled) {
+  transition: transform var(--dur-quick) var(--ease-pop);
+}
+button:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+/* Toasts pop in — the one surface with no entrance at all (daisyUI sheets animate themselves). */
+@keyframes toast-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+.toast > .alert {
+  animation: toast-pop var(--dur-soft) var(--ease-pop);
 }
 
 /* Honor reduced-motion globally (§7/§13) — animate nothing meaningful for those who opt out. */

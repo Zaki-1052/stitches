@@ -106,7 +106,11 @@ export default function ProjectsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="sticky top-0 z-20 flex items-center gap-2 bg-base-200 px-5 pt-1 pb-2.5">
+      {/* Sticky bar pads the status-bar inset for standalone PWA mode (4.2, DESIGN §12 #3). */}
+      <div
+        className="sticky top-0 z-20 flex items-center gap-2 bg-base-200 px-5 pb-2.5"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.25rem)' }}
+      >
         <div className="-my-1 flex flex-1 gap-2 overflow-x-auto py-1">
           {PROJECT_STATUSES.map((s) => (
             <StatusFilterChip

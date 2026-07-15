@@ -13,6 +13,7 @@ import { useAuth } from '../../../lib/auth.tsx'
 import { useToast } from '../../shared/toast.tsx'
 import { applyFieldErrors, normalizePbError } from '../../shared/errors.ts'
 import { ImagePipelineError, processImage, revokePreview } from '../../shared/imagePipeline.ts'
+import { useRevokeOnUnmount } from '../../shared/useRevokeOnUnmount.ts'
 import type { ProcessedImage } from '../../shared/imagePipeline.ts'
 
 const schema = z.object({
@@ -43,6 +44,9 @@ export function ProfileCard() {
     resolver: zodResolver(schema),
     defaultValues: { name: user?.name || '' },
   })
+
+  // 4.2: a picked-but-unsaved avatar preview releases on any exit (see useRevokeOnUnmount).
+  useRevokeOnUnmount(() => (avatar.kind === 'new' ? [avatar.image.previewUrl] : []))
 
   const name = user?.name || 'friend'
   const initial = name.trim().charAt(0).toUpperCase() || '♡'
