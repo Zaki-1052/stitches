@@ -3,18 +3,23 @@
 // the quick-add doors, and the recently-added strip. Hero values fold pending taps over server
 // truth (SPEC §11); no realtime subscription here — realtime stays per open project.
 //
-// State matrix (p08 plan): WIP → heroes · no WIP but content → "nothing on the hook" ghost card
+// State matrix (p08 plan, next-up row added 2026-07-19): WIP → heroes · no WIP but planned →
+// "next up" cards with one-tap Cast on · other content only → "nothing on the hook" ghost card
 // · truly nothing → the new-user empty state. The "any content?" probe defers until the
 // in-progress list settles empty, and nothing is decided while a relevant query is pending
 // (no empty-state flash).
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { useFinishedPatternIds, useProjects } from '../features/projects/queries.ts'
+import { useQuickUpdateProject } from '../features/projects/mutations.ts'
+import { normalizeStatus } from '../features/projects/status.ts'
 import { useMyCounters } from '../features/counters/queries.ts'
 import { useRecentPatterns } from '../features/patterns/queries.ts'
 import { usePendingOps } from '../lib/outbox.ts'
+import { useToast } from '../features/shared/toast.tsx'
 import type { CounterRecord, ProjectRecord } from '../lib/schema.ts'
 import { HeroCard } from '../features/home/components/HeroCard.tsx'
+import { NextUpCard } from '../features/home/components/NextUpCard.tsx'
 import { DoorsRow } from '../features/home/components/DoorsRow.tsx'
 import { RecentPatternsStrip } from '../features/home/components/RecentPatternsStrip.tsx'
 import { HomeEmptyState } from '../features/home/components/HomeEmptyState.tsx'
@@ -46,6 +51,23 @@ export default function HomePage() {
   const inProgress = inProgressQuery.data ?? []
   const settledEmpty = inProgressQuery.isSuccess && inProgress.length === 0
   const anyProjectsQuery = useProjects(null, { enabled: settledEmpty })
+
+  // The probe's data does double duty: planned projects become the "next up" fallback cards.
+  const planned = (anyProjectsQuery.data ?? []).filter(
+    (p) => normalizeStatus(p.status) === 'planned',
+  )
+  const quickUpdate = useQuickUpdateProject()
+  const toast = useToast()
+  const handleCastOn = (project: ProjectRecord) => {
+    if (quickUpdate.isPending) return
+    quickUpdate.mutate(
+      { id: project.id, body: { status: 'in_progress' } },
+      {
+        onSuccess: () => toast('On the hook ♡', 'success'),
+        onError: () => toast('Cast on slipped a stitch, try again?', 'error'),
+      },
+    )
+  }
 
   // Each project's hero counter: primary = oldest with a target (the p07 /projects rule),
   // falling back to the oldest counter at all. useMyCounters arrives created-asc.
@@ -108,6 +130,31 @@ export default function HomePage() {
     )
   } else if (recentQuery.isPending || anyProjectsQuery.isPending) {
     heroSection = <HeroSkeleton />
+  } else if (planned.length > 0) {
+    const nextUpCard = (project: ProjectRecord) => (
+      <NextUpCard project={project} pending={quickUpdate.isPending} onCastOn={handleCastOn} />
+    )
+    heroSection = (
+      <div className="flex flex-col gap-3">
+        <div className="flex items-baseline gap-2 px-5">
+          <h2 className="font-display text-xl font-semibold lowercase">next up</h2>
+          <span className="text-sm" style={{ color: 'var(--ink-muted)' }}>
+            waiting to be cast on
+          </span>
+        </div>
+        {planned.length === 1 ? (
+          <div className="px-5">{nextUpCard(planned[0])}</div>
+        ) : (
+          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-px-5 px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {planned.map((project) => (
+              <div key={project.id} className="w-[86%] shrink-0 snap-center">
+                {nextUpCard(project)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
   } else if (isNewUser) {
     heroSection = <HomeEmptyState />
   } else {

@@ -312,7 +312,8 @@ filled. Manual entry is never blocked by a bad scrape.
 ## 12. Frontend architecture
 
 **Routes** (React Router, library mode):
-`/login` · `/` (home: "on the hook right now" + quick add) · `/patterns` (filters in URL params) ·
+`/login` · `/` (home: "on the hook right now", falling back to "next up" planned cards with a
+one-tap Cast on when no project is in progress, + quick add) · `/patterns` (filters in URL params) ·
 `/patterns/new` (accepts `?url=` prefill) · `/patterns/:id` · `/patterns/:id/edit` · `/projects` ·
 `/projects/new` (`?pattern=`) · `/projects/:id` (summary + journal feed + counters) ·
 `/projects/:id/count` (full-screen counter surface) · `/friends` (sharing phase) · `/settings`.

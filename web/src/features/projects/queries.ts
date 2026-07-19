@@ -34,6 +34,11 @@ export const entryKeys = {
 
 // `enabled` lets Home defer its "any projects at all?" probe until the in-progress list has
 // settled empty (the new-user vs. nothing-on-the-hook distinction) — default is unchanged.
+//
+// Every projects read below carries an explicit `requestKey`: the SDK's auto-cancellation
+// keys on method+path alone, and Home mounts three different projects reads at once — with
+// the default key they cancel each other, and the loser flashes the hero's error state.
+// Same opt-out the counter outbox uses (features/counters/mutations.ts).
 export function useProjects(status: ProjectStatus | null, opts: { enabled?: boolean } = {}) {
   const { user } = useAuth()
   const viewerId = user?.id ?? ''
@@ -47,6 +52,7 @@ export function useProjects(status: ProjectStatus | null, opts: { enabled?: bool
         filter: parts.join(' && '),
         sort: '-updated',
         expand: 'pattern',
+        requestKey: projectKeys.list(viewerId, status).join(':'),
       })
     },
   })
@@ -88,6 +94,7 @@ export function useFinishedPatternIds() {
       const rows = await pb.collection('projects').getFullList<ProjectLinkRecord>({
         filter: 'status = "finished" && pattern != ""',
         fields: 'id,pattern,status,name',
+        requestKey: projectKeys.finishedPatternIds(viewerId).join(':'),
       })
       return new Set(rows.map((row) => row.pattern))
     },
@@ -105,6 +112,7 @@ export function useLinkedProjects(patternId: string) {
       pb.collection('projects').getFullList<ProjectLinkRecord>({
         filter: pb.filter('pattern = {:id}', { id: patternId }),
         fields: 'id,pattern,status,name',
+        requestKey: projectKeys.linkedToPattern(patternId).join(':'),
       }),
   })
 }

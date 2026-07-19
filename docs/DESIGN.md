@@ -216,7 +216,10 @@ plain.
 **Home — "On the hook."** Greeting + avatar (→ settings). Hero card: the most recently updated
 in-progress project — cover, name, pattern, live primary counter value, and two actions: a big
 **Count** button (→ counter screen) and **Journal** (quick entry). Multiple in-progress projects:
-horizontal snap-scroll of hero cards. Below: the four import doors as a 2×2 grid of cute buttons
+horizontal snap-scroll of hero cards. No in-progress projects but planned ones: the hero area
+shows "next up" — the planned cards (same anatomy, lilac status chip) with a single **Cast on**
+action that flips them to in progress; the "nothing on the hook" ghost card appears only when
+nothing is planned either (DECISIONS 2026-07-19). Below: the four import doors as a 2×2 grid of cute buttons
 (Paste a link · Add a file · Type it in · Search Ravelry — RAVELRY.md R2, DECISIONS 2026-07-19),
 then a "recently added" pattern strip. New-user empty state: illustration + "start your library."
 
