@@ -31,9 +31,17 @@ export function buildPatternFormData(
   images: PatternImages,
   mode: 'create' | 'edit',
   ownerId: string,
+  // Ravelry provenance (RAVELRY.md §6) — kept outside the zod schema like the image fields
+  // (nothing renders it, it's set exactly once). Absent = keys omitted: unset on create,
+  // untouched on edit, so editing a pattern never clobbers its provenance.
+  ravelryProvenance?: { id: number; fetchedAt: string } | null,
 ): FormData {
   const fd = new FormData()
   if (mode === 'create') fd.append('owner', ownerId)
+  if (ravelryProvenance) {
+    fd.append('ravelry_id', String(ravelryProvenance.id))
+    fd.append('ravelry_fetched_at', ravelryProvenance.fetchedAt)
+  }
 
   fd.append('title', values.title)
   fd.append('designer', values.designer)

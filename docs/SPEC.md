@@ -274,7 +274,8 @@ Success →
 ≤10 MB; streams the bytes back. The client wraps them in a File, runs the §8 pipeline, uploads as
 the thumbnail. (Needed because the page's `og:image` is equally CORS-blocked client-side.)
 
-Rate limit: 20 req/min per user (`@fastify/rate-limit`, keyed by user id). Logs to stdout; PM2
+Rate limit: 40 req/min per user (`@fastify/rate-limit`, keyed by user id; raised from 20 when
+the Ravelry search door made browsing chattier — DECISIONS 2026-07-19). Logs to stdout; PM2
 captures.
 
 **Frontend flow:** the quick-add screen has a Paste button (`navigator.clipboard.readText()` on

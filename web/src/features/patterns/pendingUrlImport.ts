@@ -11,6 +11,9 @@ export interface PendingUrlImport {
   defaults: Partial<PatternFormValues> // merged over patternFormDefaults by PatternFormPage
   importedFrom: string | null // chip label; null on the soft-failure path (no chip)
   thumbnail: ProcessedImage | null // null when og:image is absent or its fetch/pipeline soft-failed
+  // Ravelry provenance (RAVELRY.md §6), appended to the create body outside the form schema —
+  // nothing renders these in v1. fetchedAt is already in PB's datetime shape.
+  ravelryProvenance: { id: number; fetchedAt: string } | null
 }
 
 let pending: PendingUrlImport | null = null

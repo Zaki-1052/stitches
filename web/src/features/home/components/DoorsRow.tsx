@@ -1,10 +1,10 @@
 // web/src/features/home/components/DoorsRow.tsx — the quick-add doors on Home (DESIGN §9):
-// Paste a link · Add a file · Type it in, one row, sharing the dock ➕ sheet's palette,
-// captions, and door logic (usePasteLinkDoor / useAddFileDoor). The hidden file input lives
-// here so the picker opens from the door's own user gesture; door errors render inline,
-// matching the sheet.
+// Paste a link · Add a file · Type it in · Search Ravelry, a 2×2 grid, sharing the dock ➕
+// sheet's palette, captions, and door logic (usePasteLinkDoor / useAddFileDoor). The hidden
+// file input lives here so the picker opens from the door's own user gesture; door errors
+// render inline, matching the sheet.
 import { useNavigate } from 'react-router'
-import { ClipboardPaste, FileUp, PenLine } from 'lucide-react'
+import { ClipboardPaste, FileUp, PenLine, Search } from 'lucide-react'
 import { useAddFileDoor } from '../../patterns/useAddFileDoor.ts'
 import { usePasteLinkDoor } from '../../patterns/usePasteLinkDoor.ts'
 
@@ -52,7 +52,7 @@ export function DoorsRow() {
     <section className="flex flex-col gap-3 px-5">
       <h2 className="font-display text-xl font-semibold lowercase">add a pattern</h2>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <DoorTile
           icon={
             paste.busy ? (
@@ -91,6 +91,15 @@ export function DoorsRow() {
           deep="var(--patch-mint-deep)"
           disabled={anyBusy}
           onPress={() => navigate('/patterns/new')}
+        />
+        <DoorTile
+          icon={<Search size={28} strokeWidth={2} aria-hidden="true" />}
+          title="Search Ravelry"
+          caption="Browse crochet patterns"
+          soft="var(--patch-coral-soft)"
+          deep="var(--patch-coral-deep)"
+          disabled={anyBusy}
+          onPress={() => navigate('/patterns/search-ravelry')}
         />
       </div>
 

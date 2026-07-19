@@ -40,8 +40,20 @@ PB_PID=$!
 
 # Importer sidecar (SPEC §10) — tsx watch in dev; the values match config.ts's defaults but
 # are set explicitly to document the contract. exec keeps IMPORTER_PID = tsx itself, which
-# forwards SIGTERM to its node child.
-( cd "$ROOT/importer" && PORT=8095 PB_URL=http://127.0.0.1:8090 exec "$ROOT/node_modules/.bin/tsx" watch src/server.ts ) &
+# forwards SIGTERM to its node child. .env is sourced in this subshell only (PocketBase and
+# Vite don't need it): since R1 the importer requires RAVELRY_BASIC_USER/RAVELRY_BASIC at boot,
+# and nothing else loads .env for a bare tsx process. PORT/PB_URL stay after the source so the
+# explicit contract values keep winning.
+(
+  cd "$ROOT/importer"
+  if [ -f "$ROOT/.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "$ROOT/.env"
+    set +a
+  fi
+  PORT=8095 PB_URL=http://127.0.0.1:8090 exec "$ROOT/node_modules/.bin/tsx" watch src/server.ts
+) &
 IMPORTER_PID=$!
 
 trap 'kill "$PB_PID" "$IMPORTER_PID" 2>/dev/null || true' EXIT INT TERM

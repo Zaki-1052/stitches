@@ -73,6 +73,7 @@ const router = createBrowserRouter([
           // route. /projects/:id is lazy too: the hero Count button deep-links straight to
           // /count, so detail is not on the one-tap counting path.
           { path: '/patterns/new', lazy: lazyPage(() => import('./routes/PatternFormPage.tsx')) },
+          { path: '/patterns/search-ravelry', lazy: lazyPage(() => import('./routes/RavelrySearchPage.tsx')) },
           { path: '/patterns/:id', lazy: lazyPage(() => import('./routes/PatternDetailPage.tsx')) },
           { path: '/patterns/:id/edit', lazy: lazyPage(() => import('./routes/PatternFormPage.tsx')) },
           { path: '/projects/new', lazy: lazyPage(() => import('./routes/ProjectFormPage.tsx')) },

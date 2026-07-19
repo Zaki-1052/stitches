@@ -131,7 +131,7 @@ select, and notes — everything the user could type, pre-typed, still editable.
 ### 5.1 Endpoint
 
 `POST /import/ravelry/search` (importer) · body `{ "query": string, "page": number? }` ·
-auth + rate limiting identical to the other `/import/*` routes (PB token, 20/min per user).
+auth + rate limiting identical to the other `/import/*` routes (PB token, 40/min per user).
 
 Proxies `GET api.ravelry.com/patterns/search.json?query=…&page=…&page_size=20&craft=crochet`
 (craft filter value live-verified per §9; the docs confirm all on-site search filters work as
@@ -172,7 +172,8 @@ values through; nothing renders them in v1.
 
 ## 7. Stretch: one-time import (metadata + thumbnails) — gated
 
-**Gate:** Zara asks Cece how much she has saved; small enough to hand-import → skip entirely.
+**Gate:** resolved 2026-07-18 — Cece wants the import. (Scale never worried anyone: the math
+below holds to thousands of saves.)
 **Shape (approved):** a local Node script (`scripts/`, seed-script conventions), with the GDPR
 export as fallback. Not an in-app feature; friends don't self-serve.
 
@@ -180,12 +181,18 @@ export as fallback. Not an in-app feature; friends don't self-serve.
   photo URLs, plus Cece's own `comment` + `tag_list`), `queue/list` (carries `pattern_id`,
   `best_photo`), `library/search` (volumes with `pattern_id`, cover images). All marked
   `authenticated` — **the read-only key cannot call them.**
-- **Auth (verify-then-pick, §9):** if a "personal account access" basic key (Zara's) can GET
-  another user's *public* notebook — community wrappers say yes — the script needs zero OAuth.
-  Otherwise: **fallback (a)** Cece runs Ravelry's native "export data" (avatar menu → zip;
-  favorites/queue/library listing as JSON, private items included, no API at all) and the script
-  parses the zip instead; **fallback (b)** a one-shot localhost OAuth dance as Cece (requires
-  registering a localhost redirect URI — first actual use of the OAuth app).
+- **Auth (decided 2026-07-18, Zara's call):** Cece creates her *own* "Basic Auth: personal
+  account access" key at ravelry.com/pro/developer (prompts to create a free Pro account on
+  first visit) and hands both halves to Zara privately → `.env` as `RAVELRY_CECE_USER` /
+  `RAVELRY_CECE_KEY`, read **only** by the import script, never by the importer service. A
+  personal key authenticates *as Cece* with all permissions (docs: "you do not need to request
+  specific permissions"), so the `authenticated`-only list endpoints above work directly,
+  private items included — the §9 #5 cross-user question is moot and the OAuth dance is dead.
+  The key is full access to her account: shared over a private channel, used for this one job,
+  and Cece deletes the app on Ravelry once the import is verified. **Fallback** (if she can't
+  or won't make a key): Ravelry's native "export data" (avatar menu → zip; favorites/queue/
+  library listing as JSON, private items included, no API at all) and the script parses the
+  zip instead.
 - **Pipeline:** page through lists → dedupe pattern ids → batch `/patterns.json?ids=` (≤100 per
   call) → create Stitches patterns owned by Cece — shelf mapping (constants, tweakable):
   favorites → `want_to_make` (Ravelry hearts to the coral-heart shelf), queue → `queued`,
@@ -222,8 +229,10 @@ Recorded here so the build session starts by closing them; none block anything i
 3. ✅ VERIFIED 2026-07-17 — ETag present on live responses (weak validator, `W/"…"`; send it
    back verbatim in `If-None-Match`, quotes and `W/` prefix included).
 4. Search `sort` tokens, if a non-default ordering is ever wanted (not needed for v1).
-5. *(Stretch gate only)* whether a personal-access basic key can GET another user's public
-   `favorites/list` — decides §7 auth vs fallback.
+5. MOOT 2026-07-18 — was: whether a personal-access basic key can GET another user's public
+   `favorites/list`. §7 now uses Cece's *own* personal key (authenticates as her; no cross-user
+   read involved). Replaced by a smoke test of her key (`current_user.json`, then a one-page
+   `favorites/list`) before the import's full run.
 
 Live-response notes (2026-07-17 smoke test, pattern 124400): `difficulty_average` confirmed a
 low-clustering float (1.595 over 6,099 ratings — the §4.2 buckets are calibrated for this);
@@ -238,7 +247,7 @@ whitespace (`"stockinette stitch  "`) — the mapper trims every string.
   `If-None-Match`, serve the cached body on 304. Repeat pastes and re-searches become free.
   (Officially supported per the docs' ETags section.)
 - **Throttle:** Ravelry publishes no numeric limit anywhere (research confirmed the null
-  result). The per-user 20/min importer limit already bounds the app; Ravelry calls are
+  result). The per-user 40/min importer limit already bounds the app; Ravelry calls are
   serialized per request anyway. Honor any `429`'s `Retry-After`. The import script self-caps
   at ~1 req/s.
 - **Failure honesty:** Ravelry HTTP status and body logged on every non-200 (existing importer

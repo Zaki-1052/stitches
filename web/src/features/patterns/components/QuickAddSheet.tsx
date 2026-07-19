@@ -1,14 +1,15 @@
 // web/src/features/patterns/components/QuickAddSheet.tsx — the dock ➕ quick-add sheet (DESIGN
-// §9's import doors: Paste a link · Add a file · Type it in). "Paste a link" runs the shared
-// usePasteLinkDoor hook — clipboard → importer extract → pre-filled form (soft-fail: URL-only
-// form + gentle toast). "Add a file" runs useAddFileDoor (also behind Home's doors row) — pdfjs
-// page-1 → WebP for PDFs (soft-fail), the §8 pipeline for images (hard-fail) — and lands on
-// /patterns/new pre-filled. "Type it in" is the blank form. The hidden file input lives inside
+// §9's import doors: Paste a link · Add a file · Type it in · Search Ravelry). "Paste a link"
+// runs the shared usePasteLinkDoor hook — clipboard → importer extract → pre-filled form
+// (soft-fail: URL-only form + gentle toast). "Add a file" runs useAddFileDoor (also behind
+// Home's doors row) — pdfjs page-1 → WebP for PDFs (soft-fail), the §8 pipeline for images
+// (hard-fail) — and lands on /patterns/new pre-filled. "Type it in" is the blank form.
+// "Search Ravelry" pushes the dockless search screen. The hidden file input lives inside
 // the <dialog> so the picker opens from the button's own user gesture; door errors render
 // inline because the dialog's top layer would paint over any toast.
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
-import { ClipboardPaste, FileUp, PenLine } from 'lucide-react'
+import { ClipboardPaste, FileUp, PenLine, Search } from 'lucide-react'
 import { useAddFileDoor } from '../useAddFileDoor.ts'
 import { usePasteLinkDoor } from '../usePasteLinkDoor.ts'
 
@@ -118,6 +119,19 @@ export function QuickAddSheet({ open, onClose }: { open: boolean; onClose: () =>
           onPress={() => {
             onClose()
             navigate('/patterns/new')
+          }}
+        />
+
+        <Door
+          icon={<Search size={28} strokeWidth={2} aria-hidden="true" />}
+          title="Search Ravelry"
+          caption="Browse crochet patterns"
+          soft="var(--patch-coral-soft)"
+          deep="var(--patch-coral-deep)"
+          disabled={anyBusy}
+          onPress={() => {
+            onClose()
+            navigate('/patterns/search-ravelry')
           }}
         />
 

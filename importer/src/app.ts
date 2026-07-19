@@ -8,6 +8,7 @@ import { BODY_LIMIT_BYTES, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW } from './config'
 import { HttpError } from './errors'
 import { extractHandler, type UrlBody } from './routes/extract'
 import { imageHandler } from './routes/image'
+import { ravelrySearchHandler, type RavelrySearchBody } from './routes/ravelrySearch'
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -24,6 +25,16 @@ const urlBodySchema = {
   },
 } as const
 
+const ravelrySearchBodySchema = {
+  type: 'object',
+  required: ['query'],
+  additionalProperties: false,
+  properties: {
+    query: { type: 'string', minLength: 1, maxLength: 200 },
+    page: { type: 'integer', minimum: 1 },
+  },
+} as const
+
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: { redact: ['req.headers.authorization'] },
@@ -37,7 +48,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     // Fastify 5 hands the error over as unknown; everything below is its own error shape.
     const fastifyError = (typeof error === 'object' && error !== null ? error : {}) as Partial<FastifyError>
     if (fastifyError.validation) {
-      return reply.code(400).send({ error: 'invalid_body', message: 'Body must be {"url": "https://…"}.' })
+      return reply.code(400).send({ error: 'invalid_body', message: 'Body did not match what this route expects.' })
     }
     if (fastifyError.statusCode === 429) {
       return reply.code(429).send({ error: 'rate_limited', message: 'Too many requests — try again in a minute.' })
@@ -65,6 +76,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       })
       importScope.post<{ Body: UrlBody }>('/extract', { schema: { body: urlBodySchema } }, extractHandler)
       importScope.post<{ Body: UrlBody }>('/image', { schema: { body: urlBodySchema } }, imageHandler)
+      importScope.post<{ Body: RavelrySearchBody }>('/ravelry/search', { schema: { body: ravelrySearchBodySchema } }, ravelrySearchHandler)
     },
     { prefix: '/import' },
   )

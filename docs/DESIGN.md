@@ -216,9 +216,9 @@ plain.
 **Home — "On the hook."** Greeting + avatar (→ settings). Hero card: the most recently updated
 in-progress project — cover, name, pattern, live primary counter value, and two actions: a big
 **Count** button (→ counter screen) and **Journal** (quick entry). Multiple in-progress projects:
-horizontal snap-scroll of hero cards. Below: the three import doors as one row of cute buttons
-(Paste a link · Add a file · Type it in), then a "recently added" pattern strip. New-user empty
-state: illustration + "start your library."
+horizontal snap-scroll of hero cards. Below: the four import doors as a 2×2 grid of cute buttons
+(Paste a link · Add a file · Type it in · Search Ravelry — RAVELRY.md R2, DECISIONS 2026-07-19),
+then a "recently added" pattern strip. New-user empty state: illustration + "start your library."
 
 **Library (`/patterns`).** Sticky search, filter chip row (shelf, craft, weight, tags → filter
 sheet), grid/list toggle (grid default). Grid: 2-col, 4:5 thumbnails, title, designer,
@@ -232,7 +232,7 @@ with a lock and the microcopy "Only you can ever see these." Projects section li
 projects + "Start a project." Visibility toggle helper text, verbatim: *"Friends can see this
 pattern's info and photos — never your files."*
 
-**Save form (all three doors land here).** Basics open (title, thumbnail, craft, shelf); Details
+**Save form (all four doors land here).** Basics open (title, thumbnail, craft, shelf); Details
 collapsible (weight/hook/gauge/yardage/difficulty); tags with inline create + patch-color pick;
 source; notes; attachments. Hook field: mm number input with live US-alias readout. Sticky
 safe-area Save bar. URL door shows an "imported from {site}" chip; a failed extraction opens the

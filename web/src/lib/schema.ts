@@ -104,6 +104,10 @@ export interface PatternRecord {
   thumbnail: string
   photos: string[]
   notes: string
+  // Ravelry provenance (RAVELRY.md §6): 0 / '' when the pattern isn't Ravelry-sourced.
+  // Written by the save form and the import script; nothing renders them in v1.
+  ravelry_id: number
+  ravelry_fetched_at: string
   created: string
   updated: string
   expand?: { tags?: TagRecord[]; owner?: UserRecord }

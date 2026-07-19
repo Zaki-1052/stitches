@@ -53,7 +53,6 @@ function Field({
 }
 
 export function PatternForm({
-  mode,
   defaultValues,
   record,
   initialThumbnail,
@@ -62,7 +61,6 @@ export function PatternForm({
   onSubmit,
   onCancel,
 }: {
-  mode: 'create' | 'edit'
   defaultValues: PatternFormValues
   record?: PatternRecord
   // Quick-add file door (Session 1.3): a pre-generated thumbnail and the name of the file that
@@ -117,17 +115,16 @@ export function PatternForm({
   const existingThumbnailUrl =
     record && record.thumbnail ? pb.files.getURL(record, record.thumbnail, { thumb: '400x0' }) : null
 
-  // Details starts open when editing a pattern that already has any detail filled in.
-  const detailsOpen =
-    mode === 'edit' &&
-    Boolean(
-      defaultValues.yarn_weight ||
-        defaultValues.hook_mm ||
-        defaultValues.gauge ||
-        defaultValues.yardage ||
-        defaultValues.yardage_max ||
-        defaultValues.difficulty,
-    )
+  // Details starts open whenever any detail field is already filled — an edited pattern with
+  // details, or a create pre-filled by a Ravelry import. A blank create stays closed.
+  const detailsOpen = Boolean(
+    defaultValues.yarn_weight ||
+      defaultValues.hook_mm ||
+      defaultValues.gauge ||
+      defaultValues.yardage ||
+      defaultValues.yardage_max ||
+      defaultValues.difficulty,
+  )
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-6 px-5 pb-2">

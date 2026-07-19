@@ -23,8 +23,10 @@ the quick-add flow; optionally (gated) a one-time import of Cece's saved pattern
 - Search = `POST /import/ravelry/search`, fixed `page_size=20`, `craft=crochet` · verified live.
 - `patterns` gains `ravelry_id` + `ravelry_fetched_at` by migration · provenance/idempotency
   (RAVELRY.md §6).
-- R3 import = local script, gated on Cece's saved-count; GDPR-export parser as fallback ·
-  Zara's pick.
+- R3 import = local script; auth = Cece's *own* personal-access basic key in `.env`
+  (`RAVELRY_CECE_USER`/`RAVELRY_CECE_KEY`, script-only), GDPR-export parser as fallback · gate
+  resolved 2026-07-18 (Cece wants the import); her own key authenticates as her, so the §9 #5
+  cross-user check is moot and OAuth stays parked for good.
 - PDF vault import is sketched in the spec, **not** in this plan · revisit only on Cece's ask.
 - Once R1 lands, the importer requires `RAVELRY_BASIC_USER`/`RAVELRY_BASIC` at boot (fail fast,
   no half-configured state).
@@ -56,24 +58,32 @@ the quick-add flow; optionally (gated) a one-time import of Cece's saved pattern
 - [x] Close spec §9 #1 (needle-size discriminator) with one live fetch of a crochet pattern;
       amend RAVELRY.md §4.2 to match reality *(done pre-R1, 2026-07-17: Zara's live call showed
       `crochet: true` + `metric`; spec updated)*
-- [ ] `detect.ts` + `client.ts` + `map.ts` (mapping tables verbatim from RAVELRY.md §4.2)
-- [ ] Extract-branch wiring with logged fall-through; extended contract out
-- [ ] Migration: `ravelry_id` + `ravelry_fetched_at`
-- [ ] Form prefill + both fields saved on create
-- [ ] `importer-check.mjs` gains Ravelry cases; lint clean
+- [x] `detect.ts` + `client.ts` + `map.ts` (mapping tables verbatim from RAVELRY.md §4.2)
+- [x] Extract-branch wiring with logged fall-through; extended contract out
+- [x] Migration: `ravelry_id` + `ravelry_fetched_at`
+- [x] Form prefill + both fields saved on create
+- [x] `importer-check.mjs` gains Ravelry cases; lint clean *(Zara confirmed 2026-07-19:
+      verify:importer 34/34, verify:fresh ALL GREEN, manual paste checked)*
 
 ### Phase R2 — Search door
-- [ ] `POST /import/ravelry/search` + client wrapper
-- [ ] Door-placement decision with Zara → DECISIONS line
-- [ ] Search screen: box → cards (square thumb, name, designer, free badge) → tap → prefilled
+- [x] `POST /import/ravelry/search` + client wrapper
+- [x] Door-placement decision with Zara → DECISIONS line *(4th door everywhere, coral, 2×2)*
+- [x] Search screen: box → cards (square thumb, name, designer, free badge) → tap → prefilled
       save form via the R1 path; CDN-direct result thumbnails, nothing stored
-- [ ] Disclosure microcopy (on-voice, no em-dashes) on the search surface
-- [ ] 📱 device pass
+- [x] Disclosure microcopy (on-voice, no em-dashes) on the search surface
+- [x] 📱 device pass *(Zara confirmed 2026-07-19; follow-ups from testing: RATE_LIMIT_MAX
+      20→40, rate-limited imports now explain in place instead of opening a blank form)*
 
-### Phase R3 — One-time import (GATED: Cece's saved-count + spec §9 #5 check)
-- [ ] Verify cross-user read with a personal-access key, else GDPR-export fallback
+### Phase R3 — One-time import (gate resolved 2026-07-18: Cece wants it; builds after R1)
+- [ ] Cece creates a personal-access key at ravelry.com/pro/developer and sends both halves
+      privately (the *personal* key, not the secret key); Zara adds
+      `RAVELRY_CECE_USER`/`RAVELRY_CECE_KEY` to `.env` — can happen any time, parks until R3
+- [ ] Smoke-test her key (`current_user.json`, then a one-page `favorites/list`) before the
+      full run
 - [ ] `scripts/ravelry-import.mjs`: favorites/queue/library → dedupe → batch details →
-      patterns + tags + thumbnails, idempotent on `ravelry_id`, ~1 req/s
+      patterns + tags + thumbnails, idempotent on `ravelry_id`, ~1 req/s *(script + runbook
+      written 2026-07-19 — `docs/ravelry-import-runbook.md`; box ticks after the real run)*
+- [ ] Cece deletes the app/key on Ravelry once the import is verified on her phone
 
 ## Edge cases
 

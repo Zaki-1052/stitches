@@ -88,7 +88,13 @@ function PatternFormPageInner() {
 
   const handleSubmit = async (values: PatternFormValues, images: PatternImages) => {
     if (!user) return
-    const body = buildPatternFormData(values, images, mode, user.id)
+    const body = buildPatternFormData(
+      values,
+      images,
+      mode,
+      user.id,
+      mode === 'create' ? pendingUrl?.ravelryProvenance : undefined,
+    )
     if (mode === 'create') {
       const created = await createPattern.mutateAsync(body)
       // File-first door: the pattern exists now, so an attachment failure must not look like a
@@ -127,7 +133,6 @@ function PatternFormPageInner() {
   return (
     <Frame title={title}>
       <PatternForm
-        mode={mode}
         defaultValues={record ? patternToFormValues(record) : createDefaults}
         record={record}
         initialThumbnail={
