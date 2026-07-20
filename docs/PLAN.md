@@ -202,8 +202,88 @@ everything lives on the VPS.
 
 ---
 
-## Phase 6 — Stretch backlog *(unordered, un-planned, pull when wanted)*
+## Phase 6 — Add-ons *(spec: `docs/ADDONS.md` — binding for these sessions)*
 
-Ravelry enrichment through the importer (server-side key, aggressive caching, self-throttled) ·
-full offline browsing · public share links · desktop clipper extension · yarn stash · gpt-oss
-import assist (suggest CYC fields from page text; suggestion-only).
+*Cece-approved set, spec'd 2026-07-19. Build order per ADDONS §1: stash → offline → share →
+clipper; 6.4/6.5 only become genuinely useful once Phase 5 has shipped. Every session opens by
+closing its ADDONS §7 verify-at-build items against the pinned binary / installed packages /
+a real iPhone. (Ravelry enrichment, formerly in this backlog, shipped 2026-07-19 as R1–R3 —
+`docs/RAVELRY.md`.)*
+
+### Session 6.1 — Yarn stash
+**Goal:** the stash is real — browsable, linkable, shared like everything else.
+**Build:** ADDONS §2 — `yarns` + `projects.yarns` migration; rules with the link-guard fixtures
+proven first (full friends-linkable mirror, fall back own-only at a real wall only); quiet-unlink
+delete semantics; seed yarns; `features/yarn/` (list/detail/form, weight filters in URL params);
+Library segmented tabs with the two-root dock active state; project yarn picker + chips; yarn
+detail "used in"; rules-check extended in place.
+**Accept:**
+- [ ] `verify:fresh` green ×2, including the yarns matrix, link-guard fixtures, and the
+      unlink-on-delete cascade proof
+- [ ] 📱 Add a yarn with a photo, link it to a project — chip renders and taps through; delete
+      the yarn — project and journal untouched
+- [ ] Library tabs keep independent filter state across switches; stash empty state is on-voice
+
+### Session 6.2 — Offline foundations
+**Goal:** the app opens, browses, and reads offline; data survives app kills.
+**Build:** ADDONS §3.1–3.5 — auth boot fix (network failure ≠ bad token; `unverified` retry);
+query persistence (persist-client + async-storage-persister + idb-keyval, `__APP_VERSION__`
+buster, fileToken never dehydrated); `lib/sync.ts` full-library sync + Settings `OfflineCard`
+("Sync now", last-synced); `lib/files.ts` `thumbUrl()` refactor + thumbnail warming; cache cap
+300 → ~2000; `useOnlineStatus()` + header offline indicator; non-counter mutations fail in
+place with the offline message.
+**Accept:**
+- [ ] 📱 Airplane-mode cold reopen: session survives, library/projects/journals browse with
+      images, indicator shows
+- [ ] 📱 After one online "Sync now": a pattern never opened before renders fully offline;
+      last-synced time updates
+- [ ] Offline form Save stays put with the explicit message; counter taps still queue and flush
+      on reconnect
+
+### Session 6.3 — The vault on the go
+**Goal:** chosen pattern files open on a plane.
+**Build:** ADDONS §3.6 — per-attachment "Keep on this phone" toggle (one-shot token fetch →
+owner-scoped IDB blobs, separate store); synchronous `<a href>` object-URL viewing with
+`useRevokeOnUnmount`; per-file + aggregate sizes and "Clear all kept files" in `OfflineCard`;
+cleanup on attachment delete and logout/identity change; defensive `storage.persist()`.
+**Accept:**
+- [ ] 📱 A kept PDF opens in airplane mode; an un-kept file explains itself instead of failing
+      silently
+- [ ] Deleting the attachment or logging out removes the kept copy (IDB verified empty)
+- [ ] 📱 `blob:` PDF viewing verified on a real iPhone (or the pdfjs-viewer fallback decision
+      logged in DECISIONS)
+
+### Session 6.4 — Public share links
+**Goal:** a link Cece can text her mom — and revoke.
+**Build:** ADDONS §4 — `share_links` migration (partial unique indexes, XOR + target-owned
+rules, owner-only everything); `pb/pb_hooks/share.pb.js` route with the explicit allowlist +
+server-rendered postcard page (OG tags, noindex, inline token CSS); token minting (hook
+preferred, client fallback); `ShareSheet` on both detail pages; Vite `/share` proxy + SW
+`navigateFallbackDenylist` addition + `--hooksDir` in dev.sh **and** verify-fresh.sh; SPEC
+§13/§17 edits; rules-check extended in place (owner matrix + raw-fetch `/share/{token}` +
+attachments-absent proof).
+**Accept:**
+- [ ] `verify:fresh` green: share matrix, happy/revoked/garbage-token fetches, and the
+      attachments-absent proof on a shared pattern that has vault files
+- [ ] 📱 Link pasted in iMessage shows a preview card; the page reads cute on a phone, logged
+      out; revoke kills it immediately
+- [ ] An installed-PWA user tapping a share link reaches the postcard, not the SPA shell
+
+### Session 6.5 — Desktop clipper
+**Goal:** one click from a browser tab to the save form.
+**Build:** ADDONS §5 — `extension/` (MV3 manifest, background open-in-tab with URL-API
+construction + non-http guard, options page for the base URL, icons); `docs/clipper.md`
+(load-unpacked walkthrough + bookmarklet); `ProtectedRoute` login-redirect preservation so a
+logged-out deep link survives to its destination.
+**Accept:**
+- [ ] Load-unpacked → click on a real pattern page → `/patterns/new?url=…` opens prefilled;
+      `chrome://` pages no-op
+- [ ] Logged-out clipper tab: after login, lands back on the prefilled form (redirect fix)
+- [ ] Bookmarklet works in a second desktop browser
+
+---
+
+## Stretch backlog *(unordered, un-planned, pull when wanted)*
+
+gpt-oss import assist (suggest CYC fields from page text; suggestion-only) · Ravelry
+purchased-PDF vault import (sketched in `RAVELRY.md` §8; not planned).
