@@ -8,10 +8,10 @@
 import { useCallback, useRef, useState } from 'react'
 import { useUrlImport } from './useUrlImport.ts'
 
-const MSG_NO_CLIPBOARD = "Pasting isn't available here — the Type-it-in door still works."
-const MSG_PASTE_DENIED = "Stitches wasn't allowed to peek at your clipboard — tap Paste when iOS asks."
-const MSG_EMPTY = 'Nothing to paste yet — copy a pattern link first.'
-const MSG_NOT_A_LINK = "That doesn't look like a link — copy the page's address and try again."
+const MSG_NO_CLIPBOARD = "Pasting isn't available here, but the Type-it-in door still works."
+const MSG_PASTE_DENIED = "Stitches wasn't allowed to peek at your clipboard. Tap Paste when iOS asks."
+const MSG_EMPTY = 'Nothing to paste yet. Copy a pattern link first.'
+const MSG_NOT_A_LINK = "That doesn't look like a link. Copy the page's address and try again."
 const MSG_RATE_LIMITED = "That's a lot of imports at once. Give it a minute, then try again."
 
 // The importer's body schema caps url at 2048 chars; anything longer would 400 anyway.

@@ -10,7 +10,7 @@ export interface NormalizedPbError {
   fieldErrors: Record<string, string>
 }
 
-const FALLBACK_MESSAGE = 'Something went wrong — try again?'
+const FALLBACK_MESSAGE = 'Something went wrong. Try again?'
 const OFFLINE_MESSAGE = "You're offline. Try again once you're back online."
 
 export function normalizePbError(err: unknown): NormalizedPbError {

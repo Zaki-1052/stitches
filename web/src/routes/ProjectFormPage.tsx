@@ -59,7 +59,7 @@ export default function ProjectFormPage() {
       return (
         <Frame title={title}>
           <p className="px-5 py-16 text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
-            That project couldn't be loaded — try again in a moment?
+            That project couldn't be loaded. Try again in a moment?
           </p>
         </Frame>
       )

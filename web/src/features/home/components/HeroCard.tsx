@@ -94,7 +94,7 @@ export function HeroCard({
         </div>
       ) : (
         <p className="px-4 text-sm" style={{ color: 'var(--ink-muted)' }}>
-          No counters yet — the Count button will set one up.
+          No counters yet. The Count button will set one up.
         </p>
       )}
 

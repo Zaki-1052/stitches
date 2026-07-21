@@ -153,7 +153,7 @@ export function AttachmentsCard({ pattern }: { pattern: PatternRecord }) {
 
       if (file.type === 'application/pdf') {
         if (file.size > MAX_ATTACHMENT_BYTES) {
-          setUploadError(`That PDF is over ${MAX_ATTACHMENT_MB} MB — too big to store here.`)
+          setUploadError(`That PDF is over ${MAX_ATTACHMENT_MB} MB, too big to store here.`)
           return
         }
         attachmentFile = file
@@ -172,7 +172,7 @@ export function AttachmentsCard({ pattern }: { pattern: PatternRecord }) {
           processed = await processImage(file)
         } catch (err) {
           setUploadError(
-            err instanceof ImagePipelineError ? err.message : 'Something went wrong — try again?',
+            err instanceof ImagePipelineError ? err.message : 'Something went wrong. Try again?',
           )
           return
         }
@@ -201,7 +201,7 @@ export function AttachmentsCard({ pattern }: { pattern: PatternRecord }) {
           await updatePattern.mutateAsync({ id: pattern.id, body: thumbFd })
         } catch (err) {
           console.error('[attachments] thumbnail backfill failed', err)
-          toast("The file's in, but the cover photo didn't stick — add one anytime.", 'error')
+          toast("The file's in, but the cover photo didn't stick. Add one anytime.", 'error')
         } finally {
           revokePreview(backfillThumb.previewUrl)
         }
@@ -284,7 +284,7 @@ export function AttachmentsCard({ pattern }: { pattern: PatternRecord }) {
           </div>
         ) : attachmentsQuery.isError ? (
           <p className="text-error text-sm">
-            Couldn't load your attachments — try again in a moment?
+            Couldn't load your attachments. Try again in a moment?
           </p>
         ) : (
           <>

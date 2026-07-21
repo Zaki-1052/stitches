@@ -28,7 +28,7 @@ export function ProjectsEmptyState({
     <div className="flex flex-col items-center gap-4 px-5 py-14 text-center">
       <SearchX size={48} strokeWidth={2} style={{ color: 'var(--ink-muted)' }} aria-hidden="true" />
       <p className="font-display max-w-60 text-xl font-bold">
-        Nothing matches, yet — try loosening a filter.
+        Nothing matches, yet. Try loosening a filter.
       </p>
       {onClear && (
         <button type="button" className="btn btn-ghost" onClick={onClear}>

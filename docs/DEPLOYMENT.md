@@ -168,10 +168,35 @@ NodeSource, which puts a system-wide `node` at `/usr/bin/node`:
 ```
 curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 sudo apt-get install -y nodejs
-node --version
+/usr/bin/node --version
 ```
 
-`node --version` must print `v24.something`. I chose the system-wide NodeSource install
+`/usr/bin/node --version` must print `v24.18.0`.
+
+Two box-specific wrinkles hit during the real provisioning (2026-07-21), both handled
+here so a future rebuild doesn't trip on them:
+
+- **If the install fails with `trying to overwrite '/usr/include/node/common.gypi',
+  which is also in package libnode-dev`**: Ubuntu's old Node 12 packages are installed
+  and own files the NodeSource deb needs. Remove them and retry — the remove will also
+  take Ubuntu's old `nodejs` 12 with it, which is correct:
+
+  ```
+  sudo dpkg --configure -a
+  sudo apt-get remove -y libnode-dev libnode72
+  sudo apt-get install -y nodejs
+  ```
+
+- **Another `node` shadows the system one in interactive shells.** The box has both nvm
+  (whose node v22.15.1 wins the PATH — confirmed with `which node` during provisioning)
+  and conda. So a plain `node --version` disagrees with `/usr/bin/node --version`, which
+  is why every check here uses the absolute path. It also means the PM2 daemon and its
+  boot-time systemd unit run under nvm's node 22 — and that's fine: pm2 itself doesn't
+  care which modern node it runs on, PocketBase is a Go binary, and the ecosystem file
+  pins the importer's interpreter to `/usr/bin/node` outright. The one thing that must
+  run on node 24 always does, regardless of which node launched pm2.
+
+I chose the system-wide NodeSource install
 over nvm deliberately: PM2's boot-time resurrection runs from systemd, and the
 non-interactive SSH command that `deploy.sh` uses later needs `pm2` on the default PATH.
 Both are exactly the situations where an nvm-managed node silently isn't there (Ubuntu's
@@ -279,6 +304,9 @@ module.exports = {
     {
       name: 'stitches-importer',
       script: '/home/ubuntu/stitches/importer/server.mjs',
+      // Absolute path on purpose: nvm/conda shadow `node` on this box (Part 3). The
+      // importer must run on the system node 24, unconditionally.
+      interpreter: '/usr/bin/node',
       env: {
         PORT: '8095',
         PB_URL: 'http://127.0.0.1:8090',
@@ -332,7 +360,9 @@ pm2 startup
 ```
 
 `pm2 startup` prints one `sudo env PATH=...` command — copy it, run it, done. From then on
-a VPS reboot brings both apps back by itself. (If you ever add or rename apps, run
+a VPS reboot brings both apps back by itself. The PATH it bakes into the systemd unit
+includes the nvm/conda paths from your shell; that's fine per the Part 3 note — the
+importer's runtime is pinned no matter what. (If you ever add or rename apps, run
 `pm2 save` again to refresh the snapshot.)
 
 ---
@@ -413,13 +443,28 @@ sudo certbot renew --dry-run
 ```
 
 **Basic auth for the dashboard.** One password file, one user (pick any username; this is
-the *outer* gate on `/_/` — the PocketBase superuser login is the real lock behind it):
+the *outer* gate on `/_/` — the PocketBase superuser login is the real lock behind it).
+Two rules learned the hard way during the real provisioning (2026-07-21):
+
+- Make the password **letters, digits, and dashes only**, and get the strength from
+  length. Browsers disagree about how to encode special characters in Basic auth, and
+  the failure looks exactly like typing the right password and being rejected anyway.
+- Use the `-b` form so the password is on the command line where you can see it, instead
+  of htpasswd's blind double-prompt (`-c` creates the file; drop the `c` on any later
+  reset). Save it in the password manager first, then:
 
 ```
-sudo htpasswd -c /etc/nginx/.htpasswd-stitches zara
+sudo htpasswd -cb /etc/nginx/.htpasswd-stitches zara 'THE-PASSWORD'
 ```
 
-It prompts for the password twice. Put this one in the password manager too.
+Then make the machine confirm the file holds exactly what you think it does:
+
+```
+sudo htpasswd -vb /etc/nginx/.htpasswd-stitches zara 'THE-PASSWORD'
+```
+
+It must print that the password is correct. Nginx reads this file per-request, so changes
+take effect immediately with no reload.
 
 **Stage 2 — the full config.** Replace the entire contents of
 `/etc/nginx/sites-available/stitches` with this (SPEC §13, in the nginx-1.18 syntax from
@@ -487,7 +532,10 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-Quick pulse check from the **laptop**:
+Quick pulse check from the **laptop** — and it genuinely must be the laptop: an OCI
+instance cannot reach its own public IP (Oracle's VCN doesn't hairpin NAT), so these exact
+curls run *on the VPS* hang and print nothing, which looks exactly like a broken server
+when nothing is wrong.
 
 ```
 curl -sI https://stitches.zalibhai.com | head -3
@@ -495,14 +543,20 @@ curl -s https://stitches.zalibhai.com/api/health
 ```
 
 The first should show `HTTP/2 200`, the second the same health JSON as before, now through
-the whole TLS + proxy chain.
+the whole TLS + proxy chain. If you ever do want to test the HTTPS stack from the VPS
+itself, pin the hostname to loopback so the request never leaves the box:
+
+```
+curl -sI --resolve stitches.zalibhai.com:443:127.0.0.1 https://stitches.zalibhai.com | head -3
+```
 
 ---
 
 ## Part 9 — First login and sanity checks
 
 Open `https://stitches.zalibhai.com/_/` in a browser. You should be challenged **twice**:
-first the browser's basic-auth prompt (the htpasswd user), then PocketBase's own superuser
+first the browser's basic-auth prompt (username `zara` + the htpasswd password — **type
+it by hand**, see the troubleshooting note about pasting), then PocketBase's own superuser
 login (Part 6's email + password). Landing in the dashboard means the whole `/_/` chain
 works.
 
@@ -559,9 +613,12 @@ greets people by it and labels shared things with it, so make it the name they'd
 see). Avatars can be set later in the app's own Settings screen.
 
 This dashboard-only creation *is* the invite gate — the `users` create rule is locked, so
-these superuser-created records are the only way in. Password resets work the same way:
-you edit the record in the dashboard, and you tell your friend the new password. No SMTP,
-by design.
+these superuser-created records are the only way in. Treat the password you set here as a
+**temp password**: each person logs in with it once, then changes it themselves in the
+app's Settings (old + new — the Session 2.3 flow that exists precisely because there's no
+SMTP). You never learn anyone's real password. The only thing missing without SMTP is the
+*forgot my password* email: if someone forgets theirs, you set a fresh temp one in the
+dashboard and they change it again in Settings.
 
 Log in to the app as yourself and make sure it feels right. The full device acceptance
 walk (Session 5.1's 📱 boxes: two-device realtime counters, a 30 MB PDF into the vault,
@@ -653,6 +710,47 @@ twice is a no-op that hurts nothing. First time only, make it executable:
 chmod +x scripts/deploy.sh
 ```
 
+**Partial deploys, by kind of change.** `deploy.sh` shipping everything is always safe,
+but each kind of change really only needs its own artifact. All of these run on the
+**laptop** from the repo root:
+
+*Frontend change* (anything under `web/` — the common case). Build, sync, done. No
+restarts: Nginx serves the new static files on the very next request.
+
+```
+npm run build --workspace web
+rsync -avz --delete web/dist/ ubuntu@146.235.203.57:/var/www/stitches/dist/
+```
+
+Browsers pick it up on their next visit; installed home-screen PWAs update via the
+service worker on their next open (occasionally the one after — the worker downloads the
+new build in the background and swaps on the following launch).
+
+*Importer change* (anything under `importer/`):
+
+```
+npm run build --workspace importer
+rsync -avz importer/dist/server.mjs ubuntu@146.235.203.57:/home/ubuntu/stitches/importer/server.mjs
+ssh ubuntu@146.235.203.57 'pm2 restart stitches-importer'
+```
+
+*Schema change* (a new file in `pb/pb_migrations/`):
+
+```
+rsync -avz --delete pb/pb_migrations/ ubuntu@146.235.203.57:/home/ubuntu/stitches/pb/pb_migrations/
+ssh ubuntu@146.235.203.57 'pm2 restart stitches-pb'
+```
+
+PocketBase applies the new migrations during that restart. A schema or API-rule change
+also means re-running the Part 10 rules-check against prod afterwards — that's the
+standing regression gate.
+
+One habit that matters for frontend releases: **bump `version` in `web/package.json`**
+(the phase.session numbering the sessions already use). That value becomes
+`__APP_VERSION__`, which shows in the Settings footer *and* busts the persisted offline
+query cache wholesale — phones carrying an old cached library re-sync cleanly against the
+new build because of it.
+
 Details worth knowing:
 
 - **Schema changes ride along automatically.** New checked-in migration files get rsynced
@@ -680,13 +778,40 @@ SSE to death silently without them.
 **A big PDF upload fails instantly (413).** `client_max_body_size 50m` went missing from
 the Nginx config, or the file is genuinely over the field's 30 MB cap.
 
-**The site is unreachable.** Walk Part 2 again — after OS updates or instance rebuilds,
-Oracle's iptables rules have been known to come back.
+**The site is unreachable.** First: are you testing from the VPS itself? That always
+fails — OCI instances can't reach their own public IP (no hairpin NAT); test from the
+laptop or use the `--resolve` trick from Part 8. If it's genuinely unreachable from
+outside, walk Part 2 again — after OS updates or instance rebuilds, Oracle's iptables
+rules have been known to come back — and check both ports separately: 80 and 443 are
+independent rules in both the security list and iptables, and certbot working only proves
+80.
 
 **Imports/Ravelry search stopped working.** `pm2 logs stitches-importer --lines 50
 --nostream` on the VPS. If it's crash-looping with a missing-env-var line, the ecosystem
 file lost its Ravelry values. If requests 401, PocketBase might be down (the importer
 verifies every token against it).
+
+**Basic auth on `/_/` keeps rejecting you.** This happened during the real provisioning
+(2026-07-21), so the diagnosis is field-tested. Nginx's error log names the exact failure:
+
+```
+sudo tail -20 /var/log/nginx/error.log
+```
+
+`user "..." was not found` means the username at the popup is wrong — it's `zara`, not an
+email address. `user "zara": password mismatch` means the password nginx *received* isn't
+the one in the file — and the live culprit was **pasting into the browser's popup**: the
+paste carried something invisible (trailing whitespace or an encoding difference), so a
+password that looked right kept failing until it was typed by hand. If it recurs: type
+manually, re-set the password visibly with the `-b`/`-vb` pair from Part 8, and prove the
+server side without any browser involved:
+
+```
+curl -sI --resolve stitches.zalibhai.com:443:127.0.0.1 -u 'zara:THE-PASSWORD' https://stitches.zalibhai.com/_/ | head -3
+```
+
+`HTTP/2 200` there means nginx and the file are right and the browser is the problem
+(close *all* private windows — Safari's share auth state — and start a fresh one).
 
 **Service status, generally.** `pm2 status`, `pm2 logs stitches-pb`, `pm2 logs
 stitches-importer`. PocketBase's own request log is in the dashboard under Logs.

@@ -10,7 +10,7 @@ import type { ProcessedImage } from './imagePipeline.ts'
 
 export class PdfThumbnailError extends Error {
   constructor() {
-    super("We couldn't make a thumbnail from that PDF — you can add one after saving.")
+    super("We couldn't make a thumbnail from that PDF, but you can add one after saving.")
     this.name = 'PdfThumbnailError'
   }
 }

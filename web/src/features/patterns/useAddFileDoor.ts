@@ -43,7 +43,7 @@ export function useAddFileDoor(onPicked?: () => void) {
 
       if (file.type === 'application/pdf') {
         if (file.size > MAX_ATTACHMENT_BYTES) {
-          setError(`That PDF is over ${MAX_ATTACHMENT_MB} MB — too big to store here.`)
+          setError(`That PDF is over ${MAX_ATTACHMENT_MB} MB, too big to store here.`)
           return
         }
         attachmentFile = file // PDFs upload as-is; only their thumbnail is an image
@@ -62,7 +62,7 @@ export function useAddFileDoor(onPicked?: () => void) {
           processed = await processImage(file)
         } catch (err) {
           setError(
-            err instanceof ImagePipelineError ? err.message : 'Something went wrong — try again?',
+            err instanceof ImagePipelineError ? err.message : 'Something went wrong. Try again?',
           )
           return
         }

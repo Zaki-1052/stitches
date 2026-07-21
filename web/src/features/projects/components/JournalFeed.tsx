@@ -98,10 +98,10 @@ export function JournalFeed({
           <span className="loading loading-spinner" />
         </div>
       ) : entriesQuery.isError ? (
-        <p className="text-error text-sm">The journal couldn't load — try again in a moment?</p>
+        <p className="text-error text-sm">The journal couldn't load. Try again in a moment?</p>
       ) : entries.length === 0 ? (
         <p className="py-4 text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
-          No entries yet — this project's story starts here.
+          No entries yet. This project's story starts here.
         </p>
       ) : (
         groups.map((group) => (

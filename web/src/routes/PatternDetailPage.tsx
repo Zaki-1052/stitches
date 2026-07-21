@@ -135,7 +135,7 @@ export default function PatternDetailPage() {
       const normalized = normalizePbError(err)
       toast(
         normalized.status === 400
-          ? "This pattern can't be deleted right now — it may still be linked somewhere you can't see."
+          ? "This pattern can't be deleted right now. It may still be linked somewhere you can't see."
           : normalized.message,
         'error',
       )
@@ -286,7 +286,7 @@ export default function PatternDetailPage() {
               value={pattern.visibility}
               onChange={setVisibility}
               disabled={quickUpdate.isPending}
-              helperText="Friends can see this pattern's info and photos — never your files."
+              helperText="Friends can see this pattern's info and photos. Never your files."
             />
 
             <button

@@ -53,7 +53,7 @@ export function CounterPrefsCard() {
       <PrefRow
         name="hapticTick"
         title="Haptic tick"
-        caption="A tiny tick with every tap. Experimental — newer iPhones only."
+        caption="A tiny tick with every tap. Experimental, and newer iPhones only."
       />
     </section>
   )

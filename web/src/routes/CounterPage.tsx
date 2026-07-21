@@ -203,7 +203,7 @@ export default function CounterPage() {
         // Offline reopen lands here (memory cache died with the app) — never the empty state.
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
           <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>
-            The counters couldn't load — try again in a moment.
+            The counters couldn't load. Try again in a moment.
           </p>
           <button
             type="button"
@@ -216,7 +216,7 @@ export default function CounterPage() {
       ) : counters.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
           <p className="text-base" style={{ color: 'var(--ink-muted)' }}>
-            Nothing to count yet — add one and keep your place.
+            Nothing to count yet. Add one and keep your place.
           </p>
           <button
             type="button"

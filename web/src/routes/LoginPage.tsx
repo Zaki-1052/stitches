@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { pb } from '../lib/pb.ts'
 import { useAuth } from '../lib/auth.tsx'
 import { YarnBall } from '../components/YarnBall.tsx'
+import { PasswordInput } from '../components/PasswordInput.tsx'
 
 const schema = z.object({
   email: z.email('Enter a valid email'),
@@ -35,7 +36,7 @@ export default function LoginPage() {
       // The authStore change re-renders this component; the <Navigate> above takes over.
     } catch (err) {
       console.error('[login] authWithPassword failed', err)
-      setAuthError("That didn't match — check your email and password.")
+      setAuthError("That didn't match. Check your email and password.")
     }
   })
 
@@ -67,12 +68,7 @@ export default function LoginPage() {
 
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-semibold">Password</span>
-            <input
-              type="password"
-              autoComplete="current-password"
-              className="input input-lg w-full"
-              {...register('password')}
-            />
+            <PasswordInput autoComplete="current-password" {...register('password')} />
             {errors.password && (
               <span className="text-error text-sm">{errors.password.message}</span>
             )}

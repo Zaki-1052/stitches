@@ -6,8 +6,8 @@ export function SyncStitch() {
   return (
     <span
       role="status"
-      title="Syncing — your taps are saved"
-      aria-label="Syncing — your taps are saved"
+      title="Syncing. Your taps are saved"
+      aria-label="Syncing. Your taps are saved"
       className="grid size-6 animate-pulse place-items-center"
     >
       <svg width={18} height={18} viewBox="0 0 24 24" fill="none" aria-hidden="true">

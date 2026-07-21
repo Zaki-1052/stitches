@@ -251,7 +251,7 @@ pill; meta chips — craft, CYC weight ("4 · Medium/Worsted"), hook with alias 
 gauge, yardage, difficulty; tags; notes; photo strip. **Attachments card is owner-only**, marked
 with a lock and the microcopy "Only you can ever see these." Projects section lists this pattern's
 projects + "Start a project." Visibility toggle helper text, verbatim: *"Friends can see this
-pattern's info and photos — never your files."*
+pattern's info and photos. Never your files."*
 
 **Save form (all four doors land here).** Basics open (title, thumbnail, craft, shelf); Details
 collapsible (weight/hook/gauge/yardage/difficulty); tags with inline create + patch-color pick;
@@ -270,7 +270,7 @@ updated.
 summary card (edit in place). Counters card: rows with label, value, small ±, link glyph when
 linked, and one big **Open counter** button. Journal feed: date-grouped entries, photos in rounded
 grids, composer at top ("Add an entry… 📷"), editable date for backdating. Frogged microcopy:
-"Frogged — rip-it happens."
+"Frogged. Rip-it happens."
 
 **Counter (`/projects/:id/count`) — the flagship surface.** Full-screen, `100dvh`, its own §10.
 
@@ -304,8 +304,9 @@ region is `aria-live="polite"`; every control has an explicit label.
 
 Warm, brief, craft-flavored; never guilt, never hype. Whimsy budget: empty states, celebrations,
 the frogged status. Plain-language budget: forms, errors, anything destructive ("Delete this
-pattern and its attachments? This can't be undone."). Empty library: "No patterns yet — your shelf
-is ready when you are." Empty projects: "Nothing on the hook. Chain on!"
+pattern and its attachments? This can't be undone."). Empty library: "No patterns yet. Your shelf
+is ready when you are." Empty projects: "Nothing on the hook. Chain on!" UI copy never uses
+em-dashes; a period, comma, or plain connective carries the pause instead (2026-07-21 audit).
 
 ## 12. iOS hygiene checklist — binding
 

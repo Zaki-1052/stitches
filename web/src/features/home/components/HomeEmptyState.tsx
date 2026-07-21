@@ -9,7 +9,7 @@ export function HomeEmptyState() {
       <YarnBasket size={136} />
       <h2 className="font-display text-2xl font-bold">Start your library</h2>
       <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>
-        Save a pattern you love — the hook comes later.
+        Save a pattern you love. The hook can wait.
       </p>
     </section>
   )

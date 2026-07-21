@@ -152,7 +152,7 @@ export function ProjectForm({
 
         <Field label="Pattern" error={errors.pattern?.message}>
           <select className="select select-lg w-full" {...register('pattern')}>
-            <option value="">no pattern — improvised</option>
+            <option value="">no pattern (improvised)</option>
             {options.map((option) => (
               <option key={option.id} value={option.id}>
                 {option.title}

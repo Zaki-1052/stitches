@@ -186,7 +186,7 @@ export default function ProjectDetailPage() {
             />
             {status === 'frogged' && (
               <span className="text-sm" style={{ color: 'var(--ink-muted)' }}>
-                Frogged — rip-it happens.
+                Frogged. Rip-it happens.
               </span>
             )}
           </div>
@@ -232,7 +232,7 @@ export default function ProjectDetailPage() {
               value={project.visibility}
               onChange={setVisibility}
               disabled={quickUpdate.isPending}
-              helperText="Friends can see this project and its journal — counters stay yours."
+              helperText="Friends can see this project and its journal. Counters stay yours."
             />
 
             <button

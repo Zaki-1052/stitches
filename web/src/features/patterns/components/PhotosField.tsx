@@ -36,7 +36,7 @@ export function PhotosField({
     const picked = Array.from(fileList)
     const usable = picked.slice(0, Math.max(0, remaining))
     const overflow = picked.length - usable.length
-    setErrors(overflow > 0 ? [`Only ${max} photos fit — ${overflow} didn't make it in.`] : [])
+    setErrors(overflow > 0 ? [`Only ${max} photos fit, so ${overflow} didn't make it in.`] : [])
     if (usable.length === 0) return
 
     setBusy(true)
@@ -45,7 +45,7 @@ export function PhotosField({
       const { succeeded, failed } = await processImages(usable)
       if (succeeded.length) onChange({ ...photos, added: [...photos.added, ...succeeded] })
       if (failed.length) {
-        setErrors((prev) => [...prev, ...failed.map((f) => `${f.name} — ${f.message}`)])
+        setErrors((prev) => [...prev, ...failed.map((f) => `${f.name}: ${f.message}`)])
       }
     } finally {
       setBusy(false)

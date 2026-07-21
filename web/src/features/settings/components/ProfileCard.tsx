@@ -70,7 +70,7 @@ export function ProfileCard() {
       setAvatar({ kind: 'new', image })
     } catch (err) {
       setAvatarError(
-        err instanceof ImagePipelineError ? err.message : 'Something went wrong — try again?',
+        err instanceof ImagePipelineError ? err.message : 'Something went wrong. Try again?',
       )
     } finally {
       setAvatarBusy(false)

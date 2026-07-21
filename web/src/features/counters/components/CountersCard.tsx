@@ -40,13 +40,13 @@ export function CountersCard({ project, isOwner }: { project: ProjectRecord; isO
         </div>
       ) : countersQuery.isError ? (
         <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>
-          The counters couldn't load — try again in a moment.
+          The counters couldn't load. Try again in a moment.
         </p>
       ) : (
         <>
           {counters.length === 0 && (
             <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>
-              Nothing counted yet — rows, repeats, anything worth keeping track of.
+              Nothing counted yet. Rows, repeats, anything worth keeping track of.
             </p>
           )}
 

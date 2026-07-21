@@ -71,7 +71,7 @@ export default function TokensPage() {
       <header className="space-y-1">
         <h1 className="font-display text-2xl font-bold">stitches · tokens</h1>
         <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>
-          Throwaway demo route for Session 0.1 — body text is Nunito, headings are Baloo 2.
+          Throwaway demo route for Session 0.1. Body text is Nunito, headings are Baloo 2.
         </p>
       </header>
 

@@ -109,7 +109,7 @@ export function CounterSheet({
 
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-bold" style={{ color: 'var(--ink-muted)' }}>
-              target <span className="font-normal">· Optional — like 48</span>
+              target <span className="font-normal">· Optional, like 48</span>
             </span>
             <input
               type="text"

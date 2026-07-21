@@ -25,8 +25,8 @@ import type { ExtractResult } from './importerClient.ts'
 import type { PatternFormValues } from '../../lib/schema.ts'
 import { setPendingUrlImport } from './pendingUrlImport.ts'
 
-const MSG_SOFT_FAIL = "Couldn't read that page — the link is filled in for you."
-const MSG_IMAGE_SOFT_FAIL = "Couldn't fetch the picture — everything else made it."
+const MSG_SOFT_FAIL = "Couldn't read that page, so the link is filled in for you."
+const MSG_IMAGE_SOFT_FAIL = "Couldn't fetch the picture, but everything else made it."
 
 // TipTap's value is an HTML string — plain scraped text must be escaped before wrapping.
 function escapeHtml(text: string): string {

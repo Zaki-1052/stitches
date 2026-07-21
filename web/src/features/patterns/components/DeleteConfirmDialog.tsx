@@ -36,9 +36,8 @@ export function DeleteConfirmDialog({
             <h3 className="font-display text-xl font-bold">Can't delete this yet</h3>
             <p>
               {linkedCount === 1
-                ? 'A project still points to this pattern'
-                : `${linkedCount} projects still point to this pattern`}
-              {' — unlink them first.'}
+                ? 'A project still points to this pattern. Unlink it first.'
+                : `${linkedCount} projects still point to this pattern. Unlink them first.`}
             </p>
             <button type="button" className="btn btn-lg" onClick={onClose}>
               Okay

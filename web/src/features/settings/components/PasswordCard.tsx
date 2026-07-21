@@ -12,6 +12,7 @@ import { pb } from '../../../lib/pb.ts'
 import { useAuth } from '../../../lib/auth.tsx'
 import { useToast } from '../../shared/toast.tsx'
 import { applyFieldErrors, normalizePbError } from '../../shared/errors.ts'
+import { PasswordInput } from '../../../components/PasswordInput.tsx'
 
 const schema = z
   .object({
@@ -70,7 +71,7 @@ export function PasswordCard() {
     } catch (err) {
       console.error('[settings] re-auth after password change failed', err)
       pb.authStore.clear()
-      toast('Password changed — log in with your new one.', 'info')
+      toast('Password changed. Log in with your new one.', 'info')
       return
     }
 
@@ -88,12 +89,7 @@ export function PasswordCard() {
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold">Current password</span>
-          <input
-            type="password"
-            autoComplete="current-password"
-            className="input input-lg w-full"
-            {...register('oldPassword')}
-          />
+          <PasswordInput autoComplete="current-password" {...register('oldPassword')} />
           {errors.oldPassword && (
             <span className="text-error text-sm">{errors.oldPassword.message}</span>
           )}
@@ -101,23 +97,13 @@ export function PasswordCard() {
 
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold">New password</span>
-          <input
-            type="password"
-            autoComplete="new-password"
-            className="input input-lg w-full"
-            {...register('password')}
-          />
+          <PasswordInput autoComplete="new-password" {...register('password')} />
           {errors.password && <span className="text-error text-sm">{errors.password.message}</span>}
         </label>
 
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold">New password, again</span>
-          <input
-            type="password"
-            autoComplete="new-password"
-            className="input input-lg w-full"
-            {...register('passwordConfirm')}
-          />
+          <PasswordInput autoComplete="new-password" {...register('passwordConfirm')} />
           {errors.passwordConfirm && (
             <span className="text-error text-sm">{errors.passwordConfirm.message}</span>
           )}

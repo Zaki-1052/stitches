@@ -74,7 +74,7 @@ function PatternFormPageInner() {
       return (
         <Frame title={title}>
           <p className="px-5 py-16 text-center text-sm" style={{ color: 'var(--ink-muted)' }}>
-            That pattern couldn't be loaded — try again in a moment?
+            That pattern couldn't be loaded. Try again in a moment?
           </p>
         </Frame>
       )
@@ -111,7 +111,7 @@ function PatternFormPageInner() {
           toast('Pattern saved ♡', 'success')
         } catch (err) {
           console.error('[quick-add] attachment create failed', err)
-          toast("Pattern saved, but the file didn't attach — add it again from here.", 'error')
+          toast("Pattern saved, but the file didn't attach. Add it again from here.", 'error')
         }
       } else {
         toast('Pattern saved ♡', 'success')

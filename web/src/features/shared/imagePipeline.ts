@@ -12,7 +12,7 @@ import imageCompression from 'browser-image-compression'
 
 export class ImagePipelineError extends Error {
   constructor() {
-    super("We couldn't read that image — please convert this one and try again.")
+    super("We couldn't read that image. Please convert it and try again.")
     this.name = 'ImagePipelineError'
   }
 }

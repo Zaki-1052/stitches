@@ -87,7 +87,7 @@ export function SummaryCard({ project, isOwner }: { project: ProjectRecord; isOw
           style={{ borderColor: 'var(--color-base-300)', color: 'var(--ink-muted)' }}
         >
           <PenLine size={20} strokeWidth={2} aria-hidden="true" />
-          Pin a summary — where things stand
+          Pin a summary of where things stand
         </button>
       )}
     </section>

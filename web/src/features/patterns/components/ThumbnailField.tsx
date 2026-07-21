@@ -36,7 +36,7 @@ export function ThumbnailField({
       onChange({ kind: 'new', image })
     } catch (err) {
       setError(
-        err instanceof ImagePipelineError ? err.message : 'Something went wrong — try again?',
+        err instanceof ImagePipelineError ? err.message : 'Something went wrong. Try again?',
       )
     } finally {
       setBusy(false)
