@@ -135,9 +135,10 @@ export interface ProjectRecord {
   summary: string
   cover: string
   visibility: Visibility | ''
+  yarns: string[]
   created: string
   updated: string
-  expand?: { pattern?: PatternRecord; owner?: UserRecord }
+  expand?: { pattern?: PatternRecord; owner?: UserRecord; yarns?: YarnRecord[] }
 }
 
 // A project's diary line (SPEC §7): visibility inherited from the project; photos time-anchored
@@ -182,6 +183,26 @@ export interface AttachmentRecord {
   pattern_text: string
   created: string
   updated: string
+}
+
+// The yarn stash (ADDONS §2): patterns-shaped sharing, linked from projects as a multi-relation
+// with no quantity math. Cards render photos[0] — there is no separate thumbnail field.
+export interface YarnRecord {
+  id: string
+  owner: string
+  name: string
+  brand: string
+  colorway: string
+  weight: YarnWeight | ''
+  fiber: string
+  yardage_per_skein: number
+  skein_count: number
+  photos: string[]
+  notes: string
+  visibility: Visibility | ''
+  created: string
+  updated: string
+  expand?: { owner?: UserRecord }
 }
 
 // ---- Form schemas ----
@@ -258,6 +279,7 @@ export const projectFormSchema = z.object({
   finished_on: z.string(),
   hook_mm: numberString('Numbers only — like 5 or 5.5'),
   yarn_used: z.string(),
+  yarns: z.array(z.string()),
   visibility: z.enum(VISIBILITIES),
 })
 export type ProjectFormValues = z.infer<typeof projectFormSchema>
@@ -270,6 +292,7 @@ export const projectFormDefaults: ProjectFormValues = {
   finished_on: '',
   hook_mm: '',
   yarn_used: '',
+  yarns: [],
   visibility: 'private',
 }
 
@@ -282,6 +305,7 @@ export function projectToFormValues(p: ProjectRecord): ProjectFormValues {
     finished_on: p.finished_on.slice(0, 10),
     hook_mm: p.hook_mm ? String(p.hook_mm) : '',
     yarn_used: p.yarn_used,
+    yarns: p.yarns ?? [],
     visibility: p.visibility || 'private',
   }
 }
@@ -291,3 +315,42 @@ export const tagFormSchema = z.object({
   color: z.enum(TAG_COLORS),
 })
 export type TagFormValues = z.infer<typeof tagFormSchema>
+
+export const yarnFormSchema = z.object({
+  name: z.string().trim().min(1, 'Every yarn needs a name'),
+  brand: z.string(),
+  colorway: z.string(),
+  weight: z.union([z.literal(''), z.enum(YARN_WEIGHTS)]),
+  fiber: z.string(),
+  yardage_per_skein: numberString('Numbers only'),
+  skein_count: numberString('Numbers only'),
+  notes: z.string(),
+  visibility: z.enum(VISIBILITIES),
+})
+export type YarnFormValues = z.infer<typeof yarnFormSchema>
+
+export const yarnFormDefaults: YarnFormValues = {
+  name: '',
+  brand: '',
+  colorway: '',
+  weight: '',
+  fiber: '',
+  yardage_per_skein: '',
+  skein_count: '',
+  notes: '',
+  visibility: 'private',
+}
+
+export function yarnToFormValues(y: YarnRecord): YarnFormValues {
+  return {
+    name: y.name,
+    brand: y.brand,
+    colorway: y.colorway,
+    weight: y.weight,
+    fiber: y.fiber,
+    yardage_per_skein: y.yardage_per_skein ? String(y.yardage_per_skein) : '',
+    skein_count: y.skein_count ? String(y.skein_count) : '',
+    notes: y.notes,
+    visibility: y.visibility || 'private',
+  }
+}

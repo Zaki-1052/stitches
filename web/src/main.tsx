@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client'
 import { createBrowserRouter } from 'react-router'
 import { RouterProvider } from 'react-router/dom'
 
-import { QueryClientProvider } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 
 import '@fontsource/baloo-2/600.css'
 import '@fontsource/baloo-2/700.css'
@@ -18,7 +18,10 @@ import './styles/richtext.css'
 
 import { AuthProvider } from './lib/auth.tsx'
 import { initOutbox } from './lib/outbox.ts'
+import { initSync } from './lib/sync.ts'
+import { initKeptFiles } from './lib/keptFiles.ts'
 import { queryClient } from './features/shared/queryClient.ts'
+import { persistOptions } from './features/shared/persistence.ts'
 import { ToastProvider } from './features/shared/toast.tsx'
 import { ProtectedRoute } from './components/ProtectedRoute.tsx'
 import { AppShell } from './components/AppShell.tsx'
@@ -26,6 +29,7 @@ import { RouteErrorBoundary } from './components/RouteErrorBoundary.tsx'
 import LoginPage from './routes/LoginPage.tsx'
 import HomePage from './routes/HomePage.tsx'
 import LibraryPage from './routes/LibraryPage.tsx'
+import YarnListPage from './routes/YarnListPage.tsx'
 import ProjectsPage from './routes/ProjectsPage.tsx'
 import FriendsPage from './routes/FriendsPage.tsx'
 import CounterPage from './routes/CounterPage.tsx'
@@ -33,6 +37,8 @@ import CounterPage from './routes/CounterPage.tsx'
 // Module scope, not an effect: the persisted counter queue must flush on reopen even if no
 // counter screen ever mounts (SPEC §11), and StrictMode double-invokes effects, not modules.
 initOutbox()
+initSync()
+void initKeptFiles()
 
 // Route-level code splitting (4.2): dockless subpages load on demand. Their chunks are
 // SW-precached after install, so lazy routes still open offline; the previous screen stays
@@ -61,6 +67,7 @@ const router = createBrowserRouter([
                 children: [
                   { index: true, element: <HomePage /> },
                   { path: 'patterns', element: <LibraryPage /> },
+                  { path: 'yarn', element: <YarnListPage /> },
                   { path: 'projects', element: <ProjectsPage /> },
                   { path: 'friends', element: <FriendsPage /> },
                   { path: 'tokens', lazy: lazyPage(() => import('./routes/TokensPage.tsx')) },
@@ -76,6 +83,9 @@ const router = createBrowserRouter([
           { path: '/patterns/search-ravelry', lazy: lazyPage(() => import('./routes/RavelrySearchPage.tsx')) },
           { path: '/patterns/:id', lazy: lazyPage(() => import('./routes/PatternDetailPage.tsx')) },
           { path: '/patterns/:id/edit', lazy: lazyPage(() => import('./routes/PatternFormPage.tsx')) },
+          { path: '/yarn/new', lazy: lazyPage(() => import('./routes/YarnFormPage.tsx')) },
+          { path: '/yarn/:id', lazy: lazyPage(() => import('./routes/YarnDetailPage.tsx')) },
+          { path: '/yarn/:id/edit', lazy: lazyPage(() => import('./routes/YarnFormPage.tsx')) },
           { path: '/projects/new', lazy: lazyPage(() => import('./routes/ProjectFormPage.tsx')) },
           { path: '/projects/:id', lazy: lazyPage(() => import('./routes/ProjectDetailPage.tsx')) },
           { path: '/projects/:id/edit', lazy: lazyPage(() => import('./routes/ProjectFormPage.tsx')) },
@@ -89,12 +99,14 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
+    {/* PersistQueryClientProvider (ADDONS §3.2) restores the persisted cache before queries
+        run — a cold offline open rehydrates instead of fetching into the void. */}
+    <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
       <AuthProvider>
         <ToastProvider>
           <RouterProvider router={router} />
         </ToastProvider>
       </AuthProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   </StrictMode>,
 )

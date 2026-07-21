@@ -32,6 +32,10 @@ export function buildProjectFormData(
   fd.append('yarn_used', values.yarn_used)
   fd.append('visibility', values.visibility)
 
+  // Multi-relation: clear ≠ omit, same as patterns' tags.
+  if (values.yarns.length === 0) fd.append('yarns', '')
+  else for (const id of values.yarns) fd.append('yarns', id)
+
   if (cover.kind === 'new') fd.append('cover', cover.image.file)
   else if (cover.kind === 'removed') fd.append('cover', '')
 

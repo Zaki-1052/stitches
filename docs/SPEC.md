@@ -87,6 +87,7 @@ the URL until the app is substantially complete.
 | Tailwind CSS / daisyUI | 4.x / ^5.6 | CSS-first config; themes defined in CSS. |
 | React Router | ^7 | Library mode, not framework mode. |
 | TanStack Query | ^5 | All server state. |
+| Query persistence | @tanstack/react-query-persist-client + @tanstack/query-async-storage-persister (lockstep 5.x) · idb-keyval ^6 | Offline cache persistence + kept-file blobs (§11, Phase 6.2/6.3). |
 | react-hook-form + zod | ^7 / ^4 | With `@hookform/resolvers`. |
 | vite-plugin-pwa | ^1.3 | Workbox 7, `generateSW`. |
 | UI bits | lucide-react, motion, @fontsource/baloo-2, @fontsource/nunito | Fonts self-hosted (PWA-friendly, no Google CDN). |
@@ -174,8 +175,18 @@ linked projects is blocked and the UI offers "unlink first") · `name` text requ
 `status` select: planned · in_progress · finished · frogged · hibernating (default planned) ·
 `started_on` / `finished_on` dates · `hook_mm` number · `yarn_used` text ·
 `summary` editor (the pinned summary) · `cover` file image 1 × ≤8 MB ·
-`visibility` select private · friends (default private).
-Rules: same shape as patterns (visibility-aware read, owner-only writes).
+`visibility` select private · friends (default private) ·
+`yarns` relation → yarns, multiple ≤99, `cascadeDelete` off (Phase 6.1 — deleting a yarn
+quietly unlinks; see yarns below).
+Rules: same shape as patterns (visibility-aware read, owner-only writes); create/update
+additionally guard the links — the linked pattern must be yours or friends-shared, and every
+linked yarn must be **yours** (`(yarns.id = "" || yarns.owner = @request.auth.id)` and its
+`@request.body`-shaped update twin). Own-only is the ADDONS §2.2 fallback, taken at a proven
+wall (rules-check, 2026-07-20): v0.39.6 evaluates an OR of two multi-relation dot-path
+conditions per-aggregate — each arm ALL-quantified over the whole linked set, not per-row —
+so an own+friend-shared mix can't be expressed; and bare `yarns = ""` doesn't match an empty
+multi-relation, so the empty arm is the dot-path form. Friend-shared yarns stay viewable and
+chip-renderable; they are just not linkable.
 
 ### journal_entries
 `owner` required · `project` required (**cascadeDelete ON** — a project's diary dies with it) ·
@@ -204,14 +215,30 @@ Unique index on `(owner, name)`.
 Rules: list/view `@request.auth.id != ""` (shared patterns must render their tags) ·
 create/update/delete owner-only.
 
+### yarns — the stash (Phase 6.1, ADDONS §2)
+`owner` required · `name` text required · `brand` / `colorway` / `fiber` text ·
+`weight` select cyc_0 … cyc_8 (byte-identical to `patterns.yarn_weight`) ·
+`yardage_per_skein` number · `skein_count` number min 0 (linked, not tracked — no decrement
+math, ever) · `photos` file ≤6 × ≤8 MB (no separate thumbnail — cards use `photos[0]`) ·
+`notes` editor · `visibility` select private · friends (default private).
+Index on `yarns(owner)`; **no unique index** — re-buying the same colorway is a legitimate
+duplicate.
+Rules: patterns-shaped (auth-gated visibility-aware read, owner-only writes). **Delete is
+owner-only with no back-relation guard — a quiet unlink, deliberately unlike patterns'
+blocked-while-linked delete:** yarn is consumable stash, and v0.39.6 auto-unlinks optional
+relations, so a deleted yarn silently leaves every project's `yarns` array while projects and
+journals survive untouched.
+
 ### 7.9 Derived facts & query notes
 - **"Made ✓" badge:** a pattern counts as made if any visible project on it is `finished`. The
   client fetches the viewer's finished projects once (`fields=pattern,status`) and maps ids —
   trivial at four users, and no denormalized flag to keep in sync.
 - Library search = PB filter over `title ~ q || designer ~ q`, combined with shelf / craft /
   weight / tag filters carried in URL params.
-- Common expands: pattern detail → tags; project detail → pattern; friends feed → owner.
-- Indexes on `patterns(owner)`, `projects(owner)`, `journal_entries(project)`,
+- Common expands: pattern detail → tags; project detail → pattern, yarns; friends feed → owner.
+  Yarn "used in" is the reverse read: `projects` filtered by `yarns.id ?= {:id}` (the tag-filter
+  `?=` idiom).
+- Indexes on `patterns(owner)`, `projects(owner)`, `yarns(owner)`, `journal_entries(project)`,
   `counters(project)` — politeness, not necessity, at this scale.
 
 ## 8. Files & media pipeline
@@ -300,10 +327,29 @@ filled. Manual entry is never blocked by a bad scrape.
   for every B whose `resets_with = A`.
 - **PWA** (`vite-plugin-pwa`, `generateSW`, `registerType: autoUpdate`): precache the app shell;
   `navigateFallback: index.html` with `/api`, `/_`, `/import` denylisted. Runtime caching:
-  CacheFirst for fonts and record thumbnails (`/api/files/…` for patterns/projects/journal, 30 d,
-  ~300 entries); NetworkOnly for everything else under `/api`. Protected attachment URLs are never
-  cached. Net effect: Stitches opens and paints on garbage signal; data arrives when the network
-  does. Full offline stays in Phase 5, deliberately.
+  CacheFirst for fonts and record thumbnails (`/api/files/…?thumb=`, 30 d, ~2000 entries —
+  sized for full-library warming, Phase 6.2); NetworkOnly for everything else under `/api`.
+  Protected attachment URLs are never cached.
+- **Offline-first reads (Phase 6.2, ADDONS §3):** the query cache persists to IndexedDB
+  (`PersistQueryClientProvider` + async-storage persister over idb-keyval; `__APP_VERSION__`
+  buster invalidates wholesale per release, 30 d maxAge, the fileToken credential is never
+  dehydrated, the mutation cache stays unpersisted). `lib/sync.ts` proactively syncs the full
+  library — the canonical unfiltered list per collection into the exact runtime query keys,
+  every detail cache seeded from list rows, one journal sweep grouped per project, thumbnails
+  warmed at the exact sizes the cards request (`lib/files.ts thumbUrl()`) — on boot-refresh
+  success, Settings "Sync now", and the `online` event (10 min gate). Boot `authRefresh`
+  distinguishes a definitive rejection (clear the store) from a network failure (keep the
+  session, mark `unverified`, retry on online/foreground) — a cold offline reopen stays signed
+  in. Non-counter mutations fail in place with an explicit offline message (the shared
+  normalizer's status-0 branch). Known limit: server-side filter/search combinations never run
+  online aren't replayed offline — the unfiltered browse, every detail, and every journal are
+  the guarantee.
+- **The vault on the go (Phase 6.3, ADDONS §3.6):** per-file, owner-only "Keep on this phone" —
+  a one-shot token fetch stores the Protected blob in a dedicated IDB store
+  (`stitches-kept-files`, owner-scoped keys, swept on logout/identity change, deleted with its
+  attachment, "Clear all kept files" in Settings); viewing stays a synchronous object-URL
+  `<a href>`. Protected URLs themselves remain NetworkOnly — kept files are the only offline
+  copies: opt-in, per file, on the owner's own device.
 - **Wake lock:** counter screen offers keep-awake (`navigator.wakeLock`, re-acquired on
   `visibilitychange`); preference remembered locally.
 - **Dim counter mode:** `data-theme="stitchesdim"` on the counter surface subtree (daisyUI themes
@@ -314,7 +360,10 @@ filled. Manual entry is never blocked by a bad scrape.
 **Routes** (React Router, library mode):
 `/login` · `/` (home: "on the hook right now", falling back to "next up" planned cards with a
 one-tap Cast on when no project is in progress, + quick add) · `/patterns` (filters in URL params) ·
-`/patterns/new` (accepts `?url=` prefill) · `/patterns/:id` · `/patterns/:id/edit` · `/projects` ·
+`/patterns/new` (accepts `?url=` prefill) · `/patterns/:id` · `/patterns/:id/edit` ·
+`/yarn` · `/yarn/new` · `/yarn/:id` · `/yarn/:id/edit` (the stash, Phase 6.1: Library segmented
+tabs top both `/patterns` and `/yarn`, each keeping independent URL filter state; the dock's
+Library slot owns both roots and always lands `/patterns`) · `/projects` ·
 `/projects/new` (`?pattern=`) · `/projects/:id` (summary + journal feed + counters) ·
 `/projects/:id/count` (full-screen counter surface) · `/friends` (sharing phase) · `/settings`.
 
@@ -433,6 +482,7 @@ needs more. No CSP in v1; revisit only if Stitches ever grows past the friend gr
 ## 17. Explicitly out of scope for v1
 
 Ravelry enrichment (Phase 5, server-side key in the importer, self-throttled), public share links,
-browser extension, full offline browsing, yarn stash, push notifications, SMTP, multi-group
-tenancy, and the local-LLM import assist (Phase 5 stretch: feed page text to the VPS's gpt-oss to
-*suggest* CYC fields when metadata is thin — suggestion-only, never critical path).
+browser extension, push notifications, SMTP, multi-group tenancy, and the local-LLM import assist
+(Phase 5 stretch: feed page text to the VPS's gpt-oss to *suggest* CYC fields when metadata is
+thin — suggestion-only, never critical path). *(Retired from this list as they shipped: yarn
+stash and full offline browsing, Phase 6.1–6.3.)*

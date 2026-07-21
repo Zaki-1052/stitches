@@ -3,7 +3,7 @@
 // 100x100 thumb (SPEC §8: lists never load originals; declared in the 4.1 users migration).
 // Accepts null/undefined so callers can pass pb's nullable AuthRecord or an expand straight
 // through; sizing is className-driven so one component fits the header, feed, and chip.
-import { pb } from '../lib/pb.ts'
+import { thumbUrl } from '../lib/files.ts'
 
 // name/avatar are optional because the SDK's RecordModel declares neither — it carries them
 // behind an index signature; the fallback handles their absence either way.
@@ -26,7 +26,7 @@ export function Avatar({
     >
       {user?.avatar ? (
         <img
-          src={pb.files.getURL(user, user.avatar, { thumb: '100x100' })}
+          src={thumbUrl(user, user.avatar, 'chip')}
           alt=""
           loading="lazy"
           className="size-full object-cover"

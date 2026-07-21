@@ -25,37 +25,50 @@ export function feedItemKey(item: FeedItem): string {
   return item.kind === 'pattern' ? `pattern-${item.pattern.id}` : `fo-${item.project.id}`
 }
 
+// One implementation for the hook and lib/sync.ts (no shape drift between them). The expands
+// are supersets of what the feed cards render: `tags` and `yarns` ride along so sync's seeded
+// DETAIL caches (usePattern / useProject shapes) are complete for friend-shared records too.
+// Explicit per-caller requestKeys: a background sync must never auto-cancel a mounted feed
+// read on the same method+path (DECISIONS 2026-07-19).
+async function fetchFeed(viewerId: string, keyPrefix: string): Promise<FeedItem[]> {
+  const [patterns, projects] = await Promise.all([
+    pb.collection('patterns').getFullList<PatternRecord>({
+      filter: pb.filter('visibility = "friends" && owner != {:me}', { me: viewerId }),
+      sort: '-created',
+      expand: 'tags,owner',
+      requestKey: `${keyPrefix}:patterns`,
+    }),
+    pb.collection('projects').getFullList<ProjectRecord>({
+      filter: pb.filter('visibility = "friends" && status = "finished" && owner != {:me}', {
+        me: viewerId,
+      }),
+      sort: '-finished_on,-updated',
+      expand: 'owner,pattern,yarns',
+      requestKey: `${keyPrefix}:projects`,
+    }),
+  ])
+  // PB datetimes are UTC strings — lexical compare is chronological (lib/dates.ts rule),
+  // and date-only finished_on ("… 00:00:00.000Z") interleaves fine with full stamps.
+  return [
+    ...patterns.map((p) => ({ kind: 'pattern' as const, date: p.created, pattern: p })),
+    ...projects.map((p) => ({
+      kind: 'finished_object' as const,
+      date: p.finished_on || p.updated,
+      project: p,
+    })),
+  ].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+}
+
 export function useFriendsFeed() {
   const { user } = useAuth()
   const viewerId = user?.id ?? ''
   return useQuery({
     queryKey: friendsKeys.feed(viewerId),
     enabled: viewerId !== '',
-    queryFn: async (): Promise<FeedItem[]> => {
-      const [patterns, projects] = await Promise.all([
-        pb.collection('patterns').getFullList<PatternRecord>({
-          filter: pb.filter('visibility = "friends" && owner != {:me}', { me: viewerId }),
-          sort: '-created',
-          expand: 'owner',
-        }),
-        pb.collection('projects').getFullList<ProjectRecord>({
-          filter: pb.filter('visibility = "friends" && status = "finished" && owner != {:me}', {
-            me: viewerId,
-          }),
-          sort: '-finished_on,-updated',
-          expand: 'owner,pattern',
-        }),
-      ])
-      // PB datetimes are UTC strings — lexical compare is chronological (lib/dates.ts rule),
-      // and date-only finished_on ("… 00:00:00.000Z") interleaves fine with full stamps.
-      return [
-        ...patterns.map((p) => ({ kind: 'pattern' as const, date: p.created, pattern: p })),
-        ...projects.map((p) => ({
-          kind: 'finished_object' as const,
-          date: p.finished_on || p.updated,
-          project: p,
-        })),
-      ].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
-    },
+    queryFn: () => fetchFeed(viewerId, 'feed'),
   })
+}
+
+export function fetchFriendsFeedForSync(viewerId: string): Promise<FeedItem[]> {
+  return fetchFeed(viewerId, 'sync:feed')
 }

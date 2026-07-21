@@ -2,7 +2,7 @@
 // Proves the SPEC §7 rules against a RUNNING PocketBase: anonymous / owner / other-user across
 // every collection, plus the cascade and blocked-delete behavior the schema promises. It is
 // self-contained on purpose — two demo-user credentials, NO superuser — because PLAN re-runs it
-// in Sessions 1.3 and 4.1 and against prod in 5.1: it creates its own `[rules-check]`-prefixed
+// in Sessions 1.3, 4.1, and 6.1 and against prod in 5.1: it creates its own `[rules-check]`-prefixed
 // fixtures and removes every one of them on the way out.
 //
 // Env: PB_URL (default http://127.0.0.1:8090),
@@ -160,6 +160,9 @@ async function sweep(client) {
   for (const pattern of await client.collection('patterns').getFullList(mine('title'))) {
     await client.collection('patterns').delete(pattern.id) // attachments cascade
   }
+  for (const yarn of await client.collection('yarns').getFullList(mine('name'))) {
+    await client.collection('yarns').delete(yarn.id) // linked projects quietly unlink
+  }
   for (const tag of await client.collection('tags').getFullList(mine('name'))) {
     await client.collection('tags').delete(tag.id)
   }
@@ -241,7 +244,19 @@ const counterA = await a.collection('counters').create({
   label: `${MARK} rows (A)`,
   value: 0,
 })
-const tagB = await b.collection('tags').create({ owner: bId, name: `${MARK} test-tag`, color: 'mint' })
+const yarnPrivA = await a.collection('yarns').create({
+  owner: aId,
+  name: `${MARK} private yarn (A)`,
+  visibility: 'private',
+  weight: 'cyc_4',
+})
+const yarnSharedA = await a.collection('yarns').create({
+  owner: aId,
+  name: `${MARK} shared yarn (A)`,
+  visibility: 'friends',
+  weight: 'cyc_2',
+})
+const tagB =await b.collection('tags').create({ owner: bId, name: `${MARK} test-tag`, color: 'mint' })
 const patternB = await b.collection('patterns').create({
   owner: bId,
   title: `${MARK} private pattern (B)`,
@@ -252,17 +267,24 @@ const projectB = await b.collection('projects').create({
   name: `${MARK} project (B)`,
   visibility: 'private',
 })
-console.log('fixtures created (9 for A, 3 for B — cross-owner same-name tag included)')
+const yarnB = await b.collection('yarns').create({
+  owner: bId,
+  name: `${MARK} yarn (B)`,
+  visibility: 'private',
+  weight: 'cyc_6',
+})
+console.log('fixtures created (11 for A, 4 for B — cross-owner same-name tag included)')
 
 console.log('\n--- phase 2: access matrix ---')
 
 console.log('· anonymous sees nothing, can touch nothing')
-for (const collection of ['users', 'tags', 'patterns', 'pattern_attachments', 'projects', 'journal_entries', 'counters']) {
+for (const collection of ['users', 'tags', 'patterns', 'yarns', 'pattern_attachments', 'projects', 'journal_entries', 'counters']) {
   await expectListEmpty(`anon list ${collection} → empty`, anon, collection)
 }
 await expectDenied('anon view shared pattern → 404', () => anon.collection('patterns').getOne(patternSharedA.id))
 await expectDenied('anon view shared project → 404', () => anon.collection('projects').getOne(projectSharedA.id))
 await expectDenied('anon view shared-project entry → 404', () => anon.collection('journal_entries').getOne(entryOnSharedA.id))
+await expectDenied('anon view shared yarn → 404', () => anon.collection('yarns').getOne(yarnSharedA.id))
 await expectDenied('anon create user (invite gate)', () =>
   anon.collection('users').create({
     email: 'intruder@stitches.local',
@@ -302,6 +324,19 @@ await expectDenied('A owner-transfer own pattern → B', () => a.collection('pat
 await expectDenied('B create pattern owned by A', () => b.collection('patterns').create({ owner: aId, title: `${MARK} forged (B)` }))
 await expectDenied('B update A shared pattern', () => b.collection('patterns').update(patternSharedA.id, { title: `${MARK} defaced` }))
 await expectDenied('B delete A shared pattern', () => b.collection('patterns').delete(patternSharedA.id))
+
+console.log('· yarns — the stash, patterns-shaped')
+await expectListed('A lists own private yarn', a, 'yarns', yarnPrivA.id)
+await expectListed('A lists own shared yarn', a, 'yarns', yarnSharedA.id)
+await expectListed('B lists A shared yarn', b, 'yarns', yarnSharedA.id)
+await expectNotListed('B does not list A private yarn', b, 'yarns', yarnPrivA.id)
+await expectOk('B views A shared yarn', () => b.collection('yarns').getOne(yarnSharedA.id))
+await expectDenied('B view A private yarn → 404', () => b.collection('yarns').getOne(yarnPrivA.id))
+await expectOk('A updates own yarn (ordinary field)', () => a.collection('yarns').update(yarnPrivA.id, { colorway: 'Misty Gray' }))
+await expectDenied('A owner-transfer own yarn → B', () => a.collection('yarns').update(yarnPrivA.id, { owner: bId }))
+await expectDenied('B create yarn owned by A', () => b.collection('yarns').create({ owner: aId, name: `${MARK} forged yarn (B)` }))
+await expectDenied('B update A shared yarn', () => b.collection('yarns').update(yarnSharedA.id, { name: `${MARK} defaced` }))
+await expectDenied('B delete A shared yarn', () => b.collection('yarns').delete(yarnSharedA.id))
 
 console.log('· pattern_attachments — the copyright vault')
 await expectListed('A lists own attachment', a, 'pattern_attachments', attachmentA.id)
@@ -383,6 +418,54 @@ await expectOk('B unlink own project', () => b.collection('projects').update(pro
 await expectOk('A link-later: attach own pattern to own project', () => a.collection('projects').update(projectPrivA.id, { pattern: patternPrivA.id }))
 await expectOk('A unlink own project again', () => a.collection('projects').update(projectPrivA.id, { pattern: '' }))
 
+console.log('· projects ↔ yarns link guard — ADDONS §7 #1–4 closed empirically (2026-07-20)')
+// Proven on the pinned binary across the two 2026-07-20 gate runs:
+//   #3 an empty multi-relation matches only the DOT-PATH form (`yarns.id = ""`, the 1.1
+//      back-relation idiom) — bare `yarns = ""` does not hold (run 1: yarnless creates 400'd).
+//   #1 bare operators ALL-quantify over multi-relation dot-paths: two own yarns pass
+//      `yarns.owner = @request.auth.id`; any foreign row fails it.
+//   #2 an OR of two dot-path conditions groups PER-AGGREGATE, not per-row: the legitimate
+//      own+friend-shared mix was denied (run 2) even though every row satisfied one arm — the
+//      anticipated real wall, so the rule ships OWN-YARNS-ONLY (visibility arm dropped,
+//      DECISIONS 2026-07-20). Friend-shared yarns stay viewable and chip-renderable; they are
+//      just not linkable.
+//   #4 `@request.body.<multiRel>` dot-joins and the body empty arm are proven by the update
+//      fixtures below.
+const projectYarnsEmptyA = await expectOk('A create project with zero yarns (empty arm holds)', () =>
+  a.collection('projects').create({ owner: aId, name: `${MARK} yarnless project (A)`, yarns: [] }),
+)
+const projectYarnsOwnA = await expectOk('A create project linking two OWN yarns', () =>
+  a.collection('projects').create({ owner: aId, name: `${MARK} two-yarn project (A)`, yarns: [yarnPrivA.id, yarnSharedA.id] }),
+)
+const projectYarnOwnB = await expectOk('B create project linking own yarn', () =>
+  b.collection('projects').create({ owner: bId, name: `${MARK} own-yarn project (B)`, yarns: [yarnB.id] }),
+)
+await expectDenied('B create project linking A PRIVATE yarn', () =>
+  b.collection('projects').create({ owner: bId, name: `${MARK} sneak-yarn (B)`, yarns: [yarnPrivA.id] }),
+)
+await expectDenied('B create project linking own yarn + A PRIVATE yarn (illegit mix)', () =>
+  b.collection('projects').create({ owner: bId, name: `${MARK} sneak-mix (B)`, yarns: [yarnB.id, yarnPrivA.id] }),
+)
+await expectDenied('B create project linking own yarn + A SHARED yarn (own-only wall: viewable, not linkable)', () =>
+  b.collection('projects').create({ owner: bId, name: `${MARK} shared-mix (B)`, yarns: [yarnB.id, yarnSharedA.id] }),
+)
+if (projectYarnOwnB) {
+  await expectDenied('B re-point own project to include A PRIVATE yarn (@request.body dot-join)', () =>
+    b.collection('projects').update(projectYarnOwnB.id, { yarns: [yarnB.id, yarnPrivA.id] }),
+  )
+  await expectDenied('B re-point own project to include A SHARED yarn (own-only wall on update)', () =>
+    b.collection('projects').update(projectYarnOwnB.id, { yarns: [yarnB.id, yarnSharedA.id] }),
+  )
+}
+if (projectYarnsEmptyA) {
+  await expectOk('A link-later: attach an own yarn to the yarnless project (@request.body happy path)', () =>
+    a.collection('projects').update(projectYarnsEmptyA.id, { yarns: [yarnPrivA.id] }),
+  )
+  await expectOk('A unlink all yarns again (@request.body empty arm)', () =>
+    a.collection('projects').update(projectYarnsEmptyA.id, { yarns: [] }),
+  )
+}
+
 console.log('· journal_entries — visibility inherited from the project')
 await expectListed('B lists entry on A SHARED project', b, 'journal_entries', entryOnSharedA.id)
 await expectNotListed('B does not list entry on A PRIVATE project', b, 'journal_entries', entryOnPrivA.id)
@@ -433,6 +516,34 @@ await expectDenied('…counter cascaded away with its project → 404', () => a.
 if (counterA2) {
   await expectDenied('…linked counter cascaded away too → 404', () => a.collection('counters').getOne(counterA2.id))
 }
+// Quiet-unlink proof (ADDONS §2.2): deleting a linked yarn must succeed and silently leave
+// every project's yarns array — the project (and its journal) survives untouched.
+await expectOk('A deletes PRIVATE yarn while a project links it (quiet unlink)', () =>
+  a.collection('yarns').delete(yarnPrivA.id),
+)
+if (projectYarnsOwnA) {
+  try {
+    const refetched = await a.collection('projects').getOne(projectYarnsOwnA.id)
+    if (refetched.yarns.includes(yarnPrivA.id)) {
+      fail('…deleted yarn auto-unlinked from the project', `yarns still contains ${yarnPrivA.id}`)
+    } else if (!refetched.yarns.includes(yarnSharedA.id)) {
+      fail('…deleted yarn auto-unlinked from the project', 'the OTHER linked yarn vanished too')
+    } else {
+      pass('…deleted yarn auto-unlinked from the project (other link intact)')
+    }
+  } catch (err) {
+    fail('…deleted yarn auto-unlinked from the project', `project vanished: ${describeError(err)}`)
+  }
+  await expectOk('A deletes two-yarn project', () => a.collection('projects').delete(projectYarnsOwnA.id))
+}
+if (projectYarnsEmptyA) {
+  await expectOk('A deletes yarnless project', () => a.collection('projects').delete(projectYarnsEmptyA.id))
+}
+if (projectYarnOwnB) {
+  await expectOk('B deletes own-yarn project', () => b.collection('projects').delete(projectYarnOwnB.id))
+}
+await expectOk('A deletes shared yarn', () => a.collection('yarns').delete(yarnSharedA.id))
+await expectOk('B deletes own yarn', () => b.collection('yarns').delete(yarnB.id))
 await expectOk('A delete unlinked private pattern (guard permits zero back-links)', () => a.collection('patterns').delete(patternPrivA.id))
 await expectOk('A deletes private project (entry cascades)', () => a.collection('projects').delete(projectPrivA.id))
 await expectOk('A deletes own tag', () => a.collection('tags').delete(tagA.id))
@@ -449,6 +560,7 @@ for (const client of [a, b]) {
     ['tags', 'name'],
     ['patterns', 'title'],
     ['projects', 'name'],
+    ['yarns', 'name'],
     ['counters', 'label'],
   ]) {
     const leftovers = await client.collection(collection).getFullList({

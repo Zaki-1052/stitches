@@ -122,3 +122,25 @@ export function usePatternOptions() {
       }),
   })
 }
+
+// ---- lib/sync.ts fetches (ADDONS §3.3) ----
+// The canonical unfiltered list, carrying the fuller expand the seeded DETAIL caches need
+// (usePattern expands 'tags,owner' — a superset of the list hook's shape, which is the safe
+// direction). Explicit requestKey: a background sync must never auto-cancel a mounted Library
+// read on the same method+path (DECISIONS 2026-07-19).
+export function fetchPatternsForSync(viewerId: string): Promise<PatternRecord[]> {
+  return pb.collection('patterns').getFullList<PatternRecord>({
+    filter: pb.filter('owner = {:me}', { me: viewerId }),
+    sort: '-updated',
+    expand: 'tags,owner',
+    requestKey: 'sync:patterns',
+  })
+}
+
+export function fetchTagsForSync(viewerId: string): Promise<TagRecord[]> {
+  return pb.collection('tags').getFullList<TagRecord>({
+    filter: pb.filter('owner = {:me}', { me: viewerId }),
+    sort: 'name',
+    requestKey: 'sync:tags',
+  })
+}

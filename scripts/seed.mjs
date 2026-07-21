@@ -2,8 +2,11 @@
 // createRule is locked — the invite gate — so accounts go through a superuser). Session 1.1:
 // each user's starter library — tags covering all five accent colors and six patterns
 // (each user gets at least one friends-visible and one private), created while authenticated
-// AS that user so the seed itself exercises the create rules. Every credential comes from an
-// env var — nothing is hardcoded. Idempotent: existing records are skipped. Fails loudly.
+// AS that user so the seed itself exercises the create rules. Session 6.1: a small yarn stash
+// each (weights spread, ≥1 shared + ≥1 private) plus one starter project linking a seeded
+// pattern and a seeded yarn, so the stash, picker, and chips have something real to show.
+// Every credential comes from an env var — nothing is hardcoded. Idempotent: existing records
+// are skipped. Fails loudly.
 import PocketBase from 'pocketbase'
 
 const PB_URL = process.env.PB_URL || 'http://127.0.0.1:8090'
@@ -140,6 +143,45 @@ const libraries = [
         tags: ['amigurumi', 'gifts'],
       },
     ],
+    yarns: [
+      {
+        name: 'Softee Chunky',
+        brand: 'Bernat',
+        colorway: 'Glowing Gold',
+        weight: 'cyc_6',
+        fiber: '100% acrylic',
+        yardage_per_skein: 108,
+        skein_count: 3,
+        visibility: 'friends',
+        notes: '<p>The bee yarn. Fuzzy, forgiving, gone too fast.</p>',
+      },
+      {
+        name: 'Velvet',
+        brand: 'Bernat',
+        colorway: 'Misty Gray',
+        weight: 'cyc_5',
+        fiber: '100% polyester',
+        yardage_per_skein: 315,
+        skein_count: 2,
+        visibility: 'private',
+      },
+      {
+        name: 'Simply Soft',
+        brand: 'Caron',
+        colorway: 'Pistachio',
+        weight: 'cyc_4',
+        fiber: '100% acrylic',
+        yardage_per_skein: 315,
+        skein_count: 5,
+        visibility: 'friends',
+      },
+    ],
+    project: {
+      name: 'Bee for Cece',
+      pattern: 'Bee Amigurumi',
+      linkYarn: 'Softee Chunky',
+      status: 'planned',
+    },
   },
   {
     email: required.SEED_USER2_EMAIL,
@@ -187,6 +229,35 @@ const libraries = [
         tags: ['quick wins'],
       },
     ],
+    yarns: [
+      {
+        name: 'Super Saver',
+        brand: 'Red Heart',
+        colorway: 'Aran',
+        weight: 'cyc_4',
+        fiber: '100% acrylic',
+        yardage_per_skein: 364,
+        skein_count: 6,
+        visibility: 'friends',
+      },
+      {
+        name: "Sugar'n Cream",
+        brand: 'Lily',
+        colorway: 'Hot Blue',
+        weight: 'cyc_3',
+        fiber: '100% cotton',
+        yardage_per_skein: 120,
+        skein_count: 4,
+        visibility: 'private',
+        notes: '<p>Dishcloth cotton. Rough on the hands, worth it.</p>',
+      },
+    ],
+    project: {
+      name: 'Ripple for the couch',
+      pattern: 'Ripple Blanket',
+      linkYarn: 'Super Saver',
+      status: 'planned',
+    },
   },
 ]
 
@@ -252,6 +323,49 @@ for (const library of libraries) {
       `pattern “${pattern.title}” (${library.email})`,
     )
   }
+
+  for (const yarn of library.yarns) {
+    await ensureRecord(
+      client,
+      'yarns',
+      // No unique index on yarns (re-buying a colorway is legitimate) — owner+name+colorway is
+      // purely the seed's idempotency key.
+      client.filter('owner = {:me} && name = {:name} && colorway = {:colorway}', {
+        me,
+        name: yarn.name,
+        colorway: yarn.colorway,
+      }),
+      { ...yarn, owner: me },
+      `yarn “${yarn.name}” (${library.email})`,
+    )
+  }
+
+  // One starter project per user, linked to a seeded pattern AND a seeded yarn at create time —
+  // the create itself exercises both link guards. getFirstListItem throws on a miss: a seed
+  // referencing unknown records is a bug, not a case to tolerate.
+  const linkedPattern = await client
+    .collection('patterns')
+    .getFirstListItem(
+      client.filter('owner = {:me} && title = {:title}', { me, title: library.project.pattern }),
+    )
+  const linkedYarn = await client
+    .collection('yarns')
+    .getFirstListItem(
+      client.filter('owner = {:me} && name = {:name}', { me, name: library.project.linkYarn }),
+    )
+  await ensureRecord(
+    client,
+    'projects',
+    client.filter('owner = {:me} && name = {:name}', { me, name: library.project.name }),
+    {
+      owner: me,
+      name: library.project.name,
+      status: library.project.status,
+      pattern: linkedPattern.id,
+      yarns: [linkedYarn.id],
+    },
+    `project “${library.project.name}” (${library.email})`,
+  )
 }
 
 console.log('seed: library done')

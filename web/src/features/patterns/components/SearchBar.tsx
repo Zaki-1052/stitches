@@ -4,7 +4,17 @@
 import { useEffect, useState } from 'react'
 import { Search, X } from 'lucide-react'
 
-export function SearchBar({ value, onCommit }: { value: string; onCommit: (q: string) => void }) {
+export function SearchBar({
+  value,
+  onCommit,
+  placeholder = 'Search titles & designers',
+  ariaLabel = 'Search your library',
+}: {
+  value: string
+  onCommit: (q: string) => void
+  placeholder?: string
+  ariaLabel?: string
+}) {
   const [text, setText] = useState(value)
 
   // Back/forward or chip-driven clears change the committed value from outside; adopt it.
@@ -19,15 +29,12 @@ export function SearchBar({ value, onCommit }: { value: string; onCommit: (q: st
   }, [text, value, onCommit])
 
   return (
-    <label
-      className="input input-lg flex w-full items-center gap-2"
-      aria-label="Search your library"
-    >
+    <label className="input input-lg flex w-full items-center gap-2" aria-label={ariaLabel}>
       <Search size={20} strokeWidth={2} style={{ color: 'var(--ink-muted)' }} aria-hidden="true" />
       <input
         type="search"
         enterKeyHint="search"
-        placeholder="Search titles & designers"
+        placeholder={placeholder}
         className="grow"
         value={text}
         onChange={(e) => setText(e.target.value)}

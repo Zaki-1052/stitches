@@ -4,7 +4,7 @@
 // a body or a photo before Save enables. The editable date IS the backdating feature (SPEC §7).
 // Edit mode omits owner/project keys (the rules' OWNER_LOCK and :changed re-parent lock).
 import { useState } from 'react'
-import { pb } from '../../../lib/pb.ts'
+import { thumbUrl } from '../../../lib/files.ts'
 import { useAuth } from '../../../lib/auth.tsx'
 import type { JournalEntryRecord, ProjectRecord } from '../../../lib/schema.ts'
 import { todayLocalISO } from '../../../lib/dates.ts'
@@ -103,7 +103,7 @@ export function EntryComposer({
         photos={photos}
         onChange={setPhotos}
         onBusyChange={setPhotosBusy}
-        urlFor={(filename) => (entry ? pb.files.getURL(entry, filename, { thumb: '400x0' }) : '')}
+        urlFor={(filename) => (entry ? thumbUrl(entry, filename, 'grid') : '')}
         max={MAX_ENTRY_PHOTOS}
         label="Photos"
       />

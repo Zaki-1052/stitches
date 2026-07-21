@@ -47,6 +47,16 @@ export function useMyCounters() {
   })
 }
 
+// lib/sync.ts fetch (ADDONS §3.3): the viewer's counters, mine-key shape. Own requestKey per
+// DECISIONS 2026-07-19.
+export function fetchMyCountersForSync(viewerId: string): Promise<CounterRecord[]> {
+  return pb.collection('counters').getFullList<CounterRecord>({
+    filter: pb.filter('owner = {:me}', { me: viewerId }),
+    sort: 'created',
+    requestKey: 'sync:counters',
+  })
+}
+
 // Skips when the cached row is fresher (PB `updated` is ms-precision and lexicographically
 // ordered); inserts keep created-asc order so a realtime create lands where the pager expects
 // it. No-op when the list isn't cached — the next mount refetches anyway.

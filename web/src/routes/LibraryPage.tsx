@@ -21,6 +21,7 @@ import { EmptyState } from '../features/patterns/components/EmptyState.tsx'
 import { FilterSheet } from '../features/patterns/components/FilterSheet.tsx'
 import { PatternCard } from '../features/patterns/components/PatternCard.tsx'
 import { SearchBar } from '../features/patterns/components/SearchBar.tsx'
+import { LibraryTabs } from '../components/LibraryTabs.tsx'
 
 function ViewToggle({ view, onChange }: { view: LibraryView; onChange: (v: LibraryView) => void }) {
   return (
@@ -88,6 +89,8 @@ export default function LibraryPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <LibraryTabs />
+
       {/* Sticky bars sit at the visual top once scrolled — in standalone PWA mode that is the
           notch/status bar, so the top inset pads here too (4.2, DESIGN §12 #3). */}
       <div

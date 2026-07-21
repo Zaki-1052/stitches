@@ -8,7 +8,7 @@ import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, Paperclip } from 'lucide-react'
-import { pb } from '../../../lib/pb.ts'
+import { thumbUrl } from '../../../lib/files.ts'
 import {
   CRAFTS,
   CRAFT_LABELS,
@@ -113,7 +113,7 @@ export function PatternForm({
   })
 
   const existingThumbnailUrl =
-    record && record.thumbnail ? pb.files.getURL(record, record.thumbnail, { thumb: '400x0' }) : null
+    record && record.thumbnail ? thumbUrl(record, record.thumbnail, 'grid') : null
 
   // Details starts open whenever any detail field is already filled — an edited pattern with
   // details, or a create pre-filled by a Ravelry import. A blank create stays closed.
@@ -295,7 +295,7 @@ export function PatternForm({
         photos={photos}
         onChange={setPhotos}
         onBusyChange={setPhotosBusy}
-        urlFor={(filename) => (record ? pb.files.getURL(record, filename, { thumb: '400x0' }) : '')}
+        urlFor={(filename) => (record ? thumbUrl(record, filename, 'grid') : '')}
       />
 
       <SaveBar

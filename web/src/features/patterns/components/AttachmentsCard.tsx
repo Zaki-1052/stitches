@@ -6,7 +6,19 @@
 import { useEffect, useRef, useState } from 'react'
 import DOMPurify from 'dompurify'
 import { FileImage, FileText, FileUp, Lock, Pencil, PenLine, X } from 'lucide-react'
+import { pb } from '../../../lib/pb.ts'
 import type { AttachmentRecord, PatternRecord } from '../../../lib/schema.ts'
+import { formatBytes } from '../../../lib/bytes.ts'
+import { useOnlineStatus } from '../../../lib/network.ts'
+import {
+  keepFile,
+  keptFileKey,
+  unkeepAllForAttachment,
+  unkeepFile,
+  useKeptFileIds,
+  useKeptFileSizes,
+} from '../../../lib/keptFiles.ts'
+import { useKeptAttachments } from '../useKeptAttachments.ts'
 import { useToast } from '../../shared/toast.tsx'
 import { normalizePbError } from '../../shared/errors.ts'
 import { ImagePipelineError, processImage, revokePreview } from '../../shared/imagePipeline.ts'
@@ -100,6 +112,35 @@ export function AttachmentsCard({ pattern }: { pattern: PatternRecord }) {
   const tokenQuery = useFileToken(fileRecords.length > 0)
   const token = tokenQuery.data
 
+  // "Keep on this phone" (ADDONS §3.6): owner-scoped IDB blobs, object URLs for offline View.
+  const online = useOnlineStatus()
+  const keptIds = useKeptFileIds()
+  const keptSizes = useKeptFileSizes()
+  const keptUrls = useKeptAttachments(fileRecords)
+  const [keepBusyId, setKeepBusyId] = useState<string | null>(null)
+
+  const handleKeepToggle = async (rec: AttachmentRecord, kept: boolean) => {
+    const filename = rec.files[0]
+    if (kept) {
+      await unkeepFile(pattern.owner, rec.id, filename)
+      return
+    }
+    setKeepBusyId(rec.id)
+    try {
+      // One-shot token, NOT the shared 60 s useFileToken query — this is a single download
+      // moment, not a viewing session.
+      const oneShotToken = await pb.files.getToken()
+      const res = await fetch(protectedFileUrl(rec, filename, oneShotToken))
+      if (!res.ok) throw new Error(`keep fetch failed: ${res.status}`)
+      await keepFile(pattern.owner, rec.id, filename, await res.blob())
+    } catch (err) {
+      console.error('[keep]', err)
+      toast("Couldn't keep that file. Try again?", 'error')
+    } finally {
+      setKeepBusyId(null)
+    }
+  }
+
   const handleFile = async (file: File | undefined) => {
     if (!file) return
     setUploadError('')
@@ -176,6 +217,9 @@ export function AttachmentsCard({ pattern }: { pattern: PatternRecord }) {
     if (!confirmTarget) return
     try {
       await deleteAttachment.mutateAsync({ id: confirmTarget.id, pattern: pattern.id })
+      // The kept copy dies with its attachment (ADDONS §3.6). Call-site cleanup on purpose —
+      // attachmentMutations.ts stays a pure PB-write module.
+      await unkeepAllForAttachment(pattern.owner, confirmTarget.id)
       toast('File deleted.', 'success')
     } catch (err) {
       toast(normalizePbError(err).message, 'error')
@@ -245,39 +289,85 @@ export function AttachmentsCard({ pattern }: { pattern: PatternRecord }) {
         ) : (
           <>
             {fileRecords.length > 0 && (
-              <ul className="flex flex-col gap-1">
+              <ul className="flex flex-col gap-3">
                 {fileRecords.map((rec) => {
-                  const Icon = isPdfFilename(rec.files[0]) ? FileText : FileImage
+                  const filename = rec.files[0]
+                  const Icon = isPdfFilename(filename) ? FileText : FileImage
+                  const key = keptFileKey(pattern.owner, rec.id, filename)
+                  const kept = keptIds.has(key)
+                  const keptUrl = keptUrls[key]
+                  const sizeBytes = keptSizes.get(key)
+                  // Kept object URL first (works offline); token URL otherwise. Both render as
+                  // a synchronous <a href> — the iOS popup-blocker rule.
+                  const viewHref = keptUrl ?? (token ? protectedFileUrl(rec, filename, token) : null)
                   return (
-                    <li key={rec.id} className="flex items-center gap-3">
-                      <Icon size={24} strokeWidth={2} aria-hidden="true" />
-                      <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                        {rec.label || rec.files[0]}
-                      </span>
-                      {token ? (
-                        <a
-                          className="btn btn-ghost"
-                          href={protectedFileUrl(rec, rec.files[0], token)}
-                          target="_blank"
-                          rel="noreferrer"
+                    <li key={rec.id} className="flex flex-col gap-1">
+                      <div className="flex items-center gap-3">
+                        <Icon size={24} strokeWidth={2} aria-hidden="true" />
+                        <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                          {rec.label || filename}
+                        </span>
+                        {viewHref ? (
+                          <a className="btn btn-ghost" href={viewHref} target="_blank" rel="noreferrer">
+                            View
+                          </a>
+                        ) : (
+                          <span className="btn btn-ghost btn-disabled">View</span>
+                        )}
+                        <button
+                          type="button"
+                          aria-label={`Delete ${rec.label || filename}`}
+                          className="btn btn-ghost btn-circle"
+                          onClick={() => setConfirmTarget(rec)}
                         >
-                          View
-                        </a>
-                      ) : (
-                        <span className="btn btn-ghost btn-disabled">View</span>
+                          <X size={20} strokeWidth={2.5} />
+                        </button>
+                      </div>
+                      <label className="flex min-h-11 items-center gap-2 pl-9">
+                        <input
+                          type="checkbox"
+                          className="toggle toggle-primary"
+                          checked={kept}
+                          disabled={keepBusyId === rec.id}
+                          onChange={() => void handleKeepToggle(rec, kept)}
+                          aria-label={`Keep ${rec.label || filename} on this phone`}
+                        />
+                        <span className="text-sm">Keep on this phone</span>
+                        {keepBusyId === rec.id && <span className="loading loading-spinner loading-xs" />}
+                        {kept && sizeBytes !== undefined && (
+                          <span className="text-xs" style={{ color: 'var(--ink-muted)' }}>
+                            {formatBytes(sizeBytes)}
+                          </span>
+                        )}
+                        {kept && (
+                          <span
+                            className="rounded-full px-2 py-0.5 text-xs font-bold"
+                            style={{
+                              background: 'var(--patch-mint-soft)',
+                              color: 'var(--patch-mint-deep)',
+                            }}
+                          >
+                            On this phone
+                          </span>
+                        )}
+                      </label>
+                      {!kept && !online && (
+                        <p className="pl-9 text-xs" style={{ color: 'var(--ink-muted)' }}>
+                          This file needs the internet. Keep it on this phone to read it offline.
+                        </p>
                       )}
-                      <button
-                        type="button"
-                        aria-label={`Delete ${rec.label || rec.files[0]}`}
-                        className="btn btn-ghost btn-circle"
-                        onClick={() => setConfirmTarget(rec)}
-                      >
-                        <X size={20} strokeWidth={2.5} />
-                      </button>
                     </li>
                   )
                 })}
               </ul>
+            )}
+
+            {fileRecords.some((rec) =>
+              keptIds.has(keptFileKey(pattern.owner, rec.id, rec.files[0])),
+            ) && (
+              <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>
+                Saved for offline reading. iOS may clear it if space runs very low.
+              </p>
             )}
 
             <button

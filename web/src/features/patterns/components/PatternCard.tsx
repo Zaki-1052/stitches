@@ -3,7 +3,8 @@
 // "made ✓" when a visible finished project exists (§7.9). Lists never load originals (SPEC §8);
 // a pattern without a photo gets the yarn-ball placeholder instead of a broken image.
 import { Link } from 'react-router'
-import { pb } from '../../../lib/pb.ts'
+import { thumbUrl } from '../../../lib/files.ts'
+import type { ThumbContext } from '../../../lib/files.ts'
 import type { PatternRecord } from '../../../lib/schema.ts'
 import { patchSwatch } from '../../shared/patchColors.ts'
 import { YarnBall } from '../../../components/YarnBall.tsx'
@@ -11,19 +12,19 @@ import type { LibraryView } from '../urlParams.ts'
 
 function Thumbnail({
   pattern,
-  thumb,
+  context,
   className,
   placeholderSize,
 }: {
   pattern: PatternRecord
-  thumb: string
+  context: ThumbContext
   className: string
   placeholderSize: number
 }) {
   if (pattern.thumbnail) {
     return (
       <img
-        src={pb.files.getURL(pattern, pattern.thumbnail, { thumb })}
+        src={thumbUrl(pattern, pattern.thumbnail, context)}
         alt=""
         loading="lazy"
         className={`${className} object-cover`}
@@ -85,7 +86,7 @@ export function PatternCard({
       >
         <Thumbnail
           pattern={pattern}
-          thumb="100x100"
+          context="chip"
           className="size-14 shrink-0 rounded-2xl"
           placeholderSize={36}
         />
@@ -113,7 +114,7 @@ export function PatternCard({
     >
       <Thumbnail
         pattern={pattern}
-        thumb="400x0"
+        context="grid"
         className="aspect-[4/5] w-full"
         placeholderSize={56}
       />

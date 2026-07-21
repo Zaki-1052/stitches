@@ -25,6 +25,7 @@ export const projectKeys = {
     [...projectKeys.all, 'finishedPatternIds', viewerId] as const,
   linkedToPattern: (patternId: string) =>
     [...projectKeys.all, 'linkedToPattern', patternId] as const,
+  linkedToYarn: (yarnId: string) => [...projectKeys.all, 'linkedToYarn', yarnId] as const,
 }
 
 export const entryKeys = {
@@ -62,9 +63,10 @@ export function useProject(id: string) {
   return useQuery({
     queryKey: projectKeys.detail(id),
     enabled: id !== '',
-    // `owner` feeds the shared-by chip on a friend's project (users read rules are any-authed).
+    // `owner` feeds the shared-by chip on a friend's project (users read rules are any-authed);
+    // `yarns` feeds the detail page's yarn chips (ADDONS §2.3).
     queryFn: () =>
-      pb.collection('projects').getOne<ProjectRecord>(id, { expand: 'pattern,owner' }),
+      pb.collection('projects').getOne<ProjectRecord>(id, { expand: 'pattern,owner,yarns' }),
   })
 }
 
@@ -113,6 +115,43 @@ export function useLinkedProjects(patternId: string) {
         filter: pb.filter('pattern = {:id}', { id: patternId }),
         fields: 'id,pattern,status,name',
         requestKey: projectKeys.linkedToPattern(patternId).join(':'),
+      }),
+  })
+}
+
+// ---- lib/sync.ts fetches (ADDONS §3.3) ----
+// Canonical unfiltered list with the DETAIL cache's expand ('pattern,owner,yarns' — superset of
+// the list hook's 'pattern'). Own requestKey per DECISIONS 2026-07-19.
+export function fetchProjectsForSync(viewerId: string): Promise<ProjectRecord[]> {
+  return pb.collection('projects').getFullList<ProjectRecord>({
+    filter: pb.filter('owner = {:me}', { me: viewerId }),
+    sort: '-updated',
+    expand: 'pattern,owner,yarns',
+    requestKey: 'sync:projects',
+  })
+}
+
+// One unfiltered sweep — the list rule already scopes it to own + friend-shared (ADDONS §3.3);
+// lib/sync.ts groups rows into entryKeys.forProject caches. Sort matches useJournalEntries so
+// the grouped caches are byte-compatible with what the hook would fetch.
+export function fetchAllJournalEntriesForSync(): Promise<JournalEntryRecord[]> {
+  return pb.collection('journal_entries').getFullList<JournalEntryRecord>({
+    sort: '-entry_date,-created',
+    requestKey: 'sync:journal_entries',
+  })
+}
+
+// The yarn detail's "used in" section (ADDONS §2.3): viewer-visible projects linking this yarn,
+// via the existing tag-filter `?=` idiom on the multi-relation.
+export function useProjectsLinkedToYarn(yarnId: string) {
+  return useQuery({
+    queryKey: projectKeys.linkedToYarn(yarnId),
+    enabled: yarnId !== '',
+    queryFn: () =>
+      pb.collection('projects').getFullList<ProjectLinkRecord>({
+        filter: pb.filter('yarns.id ?= {:id}', { id: yarnId }),
+        fields: 'id,pattern,status,name',
+        requestKey: projectKeys.linkedToYarn(yarnId).join(':'),
       }),
   })
 }

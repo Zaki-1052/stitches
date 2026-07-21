@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { pb } from '../../../lib/pb.ts'
+import { thumbUrl } from '../../../lib/files.ts'
 import { projectFormSchema } from '../../../lib/schema.ts'
 import type { ProjectFormValues, ProjectRecord } from '../../../lib/schema.ts'
 import { applyFieldErrors, normalizePbError } from '../../shared/errors.ts'
@@ -18,6 +18,7 @@ import type { ThumbnailState } from '../../patterns/formData.ts'
 import { HookAliasReadout } from '../../patterns/components/HookAliasReadout.tsx'
 import { SaveBar } from '../../patterns/components/SaveBar.tsx'
 import { ThumbnailField } from '../../patterns/components/ThumbnailField.tsx'
+import { YarnPicker } from '../../yarn/components/YarnPicker.tsx'
 import { StatusPill } from './StatusPill.tsx'
 
 const FORM_FIELDS = Object.keys(projectFormSchema.shape)
@@ -140,7 +141,7 @@ export function ProjectForm({
   })
 
   const existingCoverUrl =
-    record && record.cover ? pb.files.getURL(record, record.cover, { thumb: '400x0' }) : null
+    record && record.cover ? thumbUrl(record, record.cover, 'grid') : null
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-6 px-5 pb-2">
@@ -218,6 +219,17 @@ export function ProjectForm({
             {...register('yarn_used')}
           />
         </Field>
+
+        {/* The stash link (ADDONS §2.3): multi-select chips, distinct from the freeform note
+            field above — both stay; the note covers yarn that never entered the stash. */}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold">Yarn from your stash</span>
+          <Controller
+            control={control}
+            name="yarns"
+            render={({ field }) => <YarnPicker value={field.value} onChange={field.onChange} />}
+          />
+        </div>
       </section>
 
       <SaveBar

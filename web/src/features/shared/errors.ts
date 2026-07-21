@@ -11,11 +11,19 @@ export interface NormalizedPbError {
 }
 
 const FALLBACK_MESSAGE = 'Something went wrong — try again?'
+const OFFLINE_MESSAGE = "You're offline. Try again once you're back online."
 
 export function normalizePbError(err: unknown): NormalizedPbError {
   console.error('[pb]', err)
   if (!(err instanceof ClientResponseError)) {
     return { status: 0, message: FALLBACK_MESSAGE, fieldErrors: {} }
+  }
+  // Offline / network failure (ADDONS §3.5): the SDK wraps a raw fetch TypeError as
+  // ClientResponseError{status: 0, isAbort: false} — an auto-cancellation sets isAbort instead
+  // (verified against pocketbase@0.27.0). Every mutation funnels through here, so this one
+  // branch makes every Save fail in place with an honest message instead of the generic one.
+  if (err.status === 0 && !err.isAbort) {
+    return { status: 0, message: OFFLINE_MESSAGE, fieldErrors: {} }
   }
   const body = err.response as { message?: unknown; data?: unknown }
   const fieldErrors: Record<string, string> = {}

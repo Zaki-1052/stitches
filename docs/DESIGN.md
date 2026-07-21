@@ -135,6 +135,7 @@ Every color use is a meaning, not a decoration.
 | Tags | user's pick of the five patches | `color` select in schema |
 | Links, focus rings | `--patch-blue-deep` | |
 | Destructive actions | `--color-error` (coral-deep) | reserved for delete, only |
+| Yarn chips (Phase 6.1) | neutral: `base-100` fill, `base-300` border, round `photos[0]` swatch | the swatch shows the yarn's *actual* photographed color; a patch token here would be decoration, which this table forbids |
 
 Chip anatomy: **soft** fill + **deep** text of the same patch. Selected chips flip to **core**
 fill + espresso ink. Measured ratios (Phase 0, `scripts/verify/contrast.mjs`, 2026-07-10):
@@ -205,7 +206,13 @@ time. Dock: daisyUI `dock`, 4 items + raised 56 px center "+" (blue circle, espr
 lucide icons, 12 px labels, `padding-bottom: env(safe-area-inset-bottom)`.
 
 Dock slots: **Home · Library · ➕ · Projects** (Friends joins as the 5th in the sharing phase).
-Settings live behind the avatar in the home header.
+Settings live behind the avatar in the home header. The Library slot owns **two** path roots
+since Phase 6.1 — `/patterns` and `/yarn` — highlighting for either while always landing
+`/patterns`; a two-pill segmented control (`LibraryTabs`: Patterns · Yarn) tops both routes,
+each keeping independent URL filter state. Offline indicator (Phase 6.2): a small `CloudOff` +
+"Offline. Showing what's saved." under the header title whenever the network is out or the
+session is unverified. Vault rows carry a per-file "Keep on this phone" toggle with an
+"On this phone" badge and size readout (Phase 6.3).
 
 ## 9. Screens & flows
 
@@ -223,10 +230,21 @@ nothing is planned either (DECISIONS 2026-07-19). Below: the four import doors a
 (Paste a link · Add a file · Type it in · Search Ravelry — RAVELRY.md R2, DECISIONS 2026-07-19),
 then a "recently added" pattern strip. New-user empty state: illustration + "start your library."
 
-**Library (`/patterns`).** Sticky search, filter chip row (shelf, craft, weight, tags → filter
-sheet), grid/list toggle (grid default). Grid: 2-col, 4:5 thumbnails, title, designer,
-tag dots, mint "made ✓" badge when earned. List: compact rows, small thumb. Distinct empty vs.
-no-results states. Filters serialize to URL params (shareable, back-button-safe).
+**Library (`/patterns`).** Segmented Patterns · Yarn tabs top the page (Phase 6.1). Sticky
+search, filter chip row (shelf, craft, weight, tags → filter sheet), grid/list toggle (grid
+default). Grid: 2-col, 4:5 thumbnails, title, designer, tag dots, mint "made ✓" badge when
+earned. List: compact rows, small thumb. Distinct empty vs. no-results states. Filters
+serialize to URL params (shareable, back-button-safe).
+
+**Stash (`/yarn`, Phase 6.1).** The Library's second tab: sticky search, weight filter chips →
+sheet, 2-col photo grid (`photos[0]`, yarn-ball placeholder), and its own "+ Add yarn" door —
+the dock ➕ stays pattern-doors-only. Distinct empty ("No yarn yet. Your basket is ready when
+you are.") vs. no-results states. Yarn detail: hero photo, brand · colorway, meta chips
+(weight, fiber, yards per skein, skeins), notes, photo strip, a "used in" project list, the
+visibility toggle (helper: "Friends can see this yarn in your stash. Only you can change it."),
+and a plain delete confirm — deletion quietly unlinks from projects, which keep their story.
+Project detail renders neutral yarn chips (§3); the project form picks from the stash with
+toggle chips ("Yarn from your stash") beside the freeform yarn note.
 
 **Pattern detail.** Hero image; title; designer; source chip (opens in new tab); shelf segmented
 pill; meta chips — craft, CYC weight ("4 · Medium/Worsted"), hook with alias ("5.0 mm · H-8"),
@@ -262,7 +280,8 @@ do not render for non-owners (rules already forbid them — the UI never even hi
 
 **Settings.** Name, avatar, change password (old + new — matters since there's no SMTP), counter
 preferences (wake-lock default, dim-mode memory, the experimental haptic-tick toggle, default
-off), sign out, version.
+off), offline (last synced + Sync now + kept-files summary + Clear all kept files, Phase
+6.2/6.3), sign out, version.
 
 ## 10. Counter surface deep-dive
 

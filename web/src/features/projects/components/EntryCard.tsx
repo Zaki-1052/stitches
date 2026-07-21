@@ -4,6 +4,7 @@
 import DOMPurify from 'dompurify'
 import { Pencil, Trash2 } from 'lucide-react'
 import { pb } from '../../../lib/pb.ts'
+import { thumbUrl } from '../../../lib/files.ts'
 import type { JournalEntryRecord } from '../../../lib/schema.ts'
 
 export function EntryCard({
@@ -39,7 +40,7 @@ export function EntryCard({
               rel="noreferrer"
             >
               <img
-                src={pb.files.getURL(entry, filename, { thumb: '400x0' })}
+                src={thumbUrl(entry, filename, 'grid')}
                 alt=""
                 loading="lazy"
                 className="aspect-square w-full rounded-2xl object-cover"

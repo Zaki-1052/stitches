@@ -5,7 +5,7 @@
 // counter is chosen by HomePage: primary (oldest with a target, the p07 rule) falling back to
 // the oldest. Cover/name are one Link; the action buttons are siblings — no nested interactives.
 import { Link } from 'react-router'
-import { pb } from '../../../lib/pb.ts'
+import { thumbUrl } from '../../../lib/files.ts'
 import type { CounterRecord, ProjectRecord } from '../../../lib/schema.ts'
 import type { CounterOp } from '../../../lib/outbox.ts'
 import { foldValue } from '../../../lib/outbox.ts'
@@ -37,7 +37,7 @@ export function HeroCard({
       <Link to={`/projects/${project.id}`} className="flex flex-col">
         {project.cover ? (
           <img
-            src={pb.files.getURL(project, project.cover, { thumb: '800x0' })}
+            src={thumbUrl(project, project.cover, 'hero')}
             alt=""
             className="aspect-[16/9] w-full object-cover"
           />

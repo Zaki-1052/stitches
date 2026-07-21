@@ -4,7 +4,7 @@
 // to in progress (no date side-effects: DECISIONS 2026-07-13). HomePage owns the mutation and
 // shares one `pending` flag across cards so two flips can't race.
 import { Link } from 'react-router'
-import { pb } from '../../../lib/pb.ts'
+import { thumbUrl } from '../../../lib/files.ts'
 import type { ProjectRecord } from '../../../lib/schema.ts'
 import { YarnBall } from '../../../components/YarnBall.tsx'
 import { StatusChip } from '../../projects/components/StatusChip.tsx'
@@ -28,7 +28,7 @@ export function NextUpCard({
       <Link to={`/projects/${project.id}`} className="flex flex-col">
         {project.cover ? (
           <img
-            src={pb.files.getURL(project, project.cover, { thumb: '800x0' })}
+            src={thumbUrl(project, project.cover, 'hero')}
             alt=""
             className="aspect-[16/9] w-full object-cover"
           />

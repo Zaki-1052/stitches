@@ -58,12 +58,14 @@ export default defineConfig({
             handler: 'NetworkOnly',
           },
           {
-            // Record thumbnails (SPEC §11: 30 d, ~300 entries).
+            // Record thumbnails — 30 d, sized for full-library warming (ADDONS §3.4: 6.2
+            // raised 300 → 2000; the on-device storage.estimate() sanity check is deferred to
+            // the phase-boundary walk).
             urlPattern: /\/api\/files\/.*[?&]thumb=/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'thumbnails',
-              expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              expiration: { maxEntries: 2000, maxAgeSeconds: 60 * 60 * 24 * 30 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },

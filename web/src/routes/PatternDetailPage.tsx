@@ -12,6 +12,7 @@ import { ExternalLink, Pencil, Plus } from 'lucide-react'
 import { BackBar } from '../components/BackBar.tsx'
 import { YarnBall } from '../components/YarnBall.tsx'
 import { pb } from '../lib/pb.ts'
+import { thumbUrl } from '../lib/files.ts'
 import { useAuth } from '../lib/auth.tsx'
 import type { PatternRecord, Shelf, Visibility } from '../lib/schema.ts'
 import { useToast } from '../features/shared/toast.tsx'
@@ -158,7 +159,7 @@ export default function PatternDetailPage() {
       <div className="flex flex-col gap-5 px-5 pb-10">
         {pattern.thumbnail ? (
           <img
-            src={pb.files.getURL(pattern, pattern.thumbnail, { thumb: '800x0' })}
+            src={thumbUrl(pattern, pattern.thumbnail, 'hero')}
             alt=""
             className="rounded-box aspect-[4/3] w-full object-cover"
             style={{ boxShadow: 'var(--shadow-soft)' }}
@@ -233,7 +234,7 @@ export default function PatternDetailPage() {
                   className="shrink-0"
                 >
                   <img
-                    src={pb.files.getURL(pattern, filename, { thumb: '400x0' })}
+                    src={thumbUrl(pattern, filename, 'grid')}
                     alt=""
                     loading="lazy"
                     className="rounded-box h-40 w-auto"

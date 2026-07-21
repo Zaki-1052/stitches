@@ -31,3 +31,15 @@ export function formatShortDate(pbDate: string): string {
   const [year, month, day] = pbDate.slice(0, 10).split('-')
   return `${Number(day)} ${MONTHS[Number(month) - 1]} ${year}`
 }
+
+// Relative stamp for the Settings OfflineCard's "Last synced" line. Takes a full ISO datetime
+// (client-minted, lib/sync.ts) — NOT a PB date-only string, so `new Date()` is safe here.
+export function formatRelativeTime(iso: string): string {
+  const diffMin = Math.round((Date.now() - new Date(iso).getTime()) / 60_000)
+  if (diffMin < 1) return 'just now'
+  if (diffMin < 60) return `${diffMin} min ago`
+  const diffHr = Math.round(diffMin / 60)
+  if (diffHr < 24) return `${diffHr} hr ago`
+  const diffDay = Math.round(diffHr / 24)
+  return diffDay === 1 ? '1 day ago' : `${diffDay} days ago`
+}

@@ -5,7 +5,7 @@
 // list altitude — pending taps reconcile within seconds. Full-width rows (grouped sections
 // read as lists). Lists never load originals (SPEC §8); no cover → yarn-ball placeholder.
 import { Link } from 'react-router'
-import { pb } from '../../../lib/pb.ts'
+import { thumbUrl } from '../../../lib/files.ts'
 import type { CounterRecord, ProjectRecord } from '../../../lib/schema.ts'
 import { formatShortDate } from '../../../lib/dates.ts'
 import { YarnBall } from '../../../components/YarnBall.tsx'
@@ -27,7 +27,7 @@ export function ProjectCard({
     >
       {project.cover ? (
         <img
-          src={pb.files.getURL(project, project.cover, { thumb: '400x0' })}
+          src={thumbUrl(project, project.cover, 'grid')}
           alt=""
           loading="lazy"
           className="size-20 shrink-0 rounded-2xl object-cover"

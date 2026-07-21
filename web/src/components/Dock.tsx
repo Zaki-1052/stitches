@@ -5,7 +5,7 @@
 // `.dock > *` compound selectors, so a separate markup variant beats fighting its specificity.
 // Both variants share routes and the same ➕ handler opening the quick-add sheet.
 import { useState } from 'react'
-import { NavLink } from 'react-router'
+import { NavLink, useLocation } from 'react-router'
 import { House, Library, FolderHeart, Plus, UsersRound } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { QuickAddSheet } from '../features/patterns/components/QuickAddSheet.tsx'
@@ -22,14 +22,22 @@ function DockTab({
   label,
   icon: Icon,
   end,
+  forceActive,
 }: {
   to: string
   label: string
   icon: LucideIcon
   end?: boolean
+  // The Library slot owns two path roots (/patterns and /yarn — ADDONS §2.3), which NavLink's
+  // own isActive can't express; the caller computes it and passes it down.
+  forceActive?: boolean
 }) {
   return (
-    <NavLink to={to} end={end} className={({ isActive }) => (isActive ? 'dock-active' : undefined)}>
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) => ((forceActive ?? isActive) ? 'dock-active' : undefined)}
+    >
       <Icon size={24} strokeWidth={2} />
       <span className="text-[0.75rem] leading-none">{label}</span>
     </NavLink>
@@ -41,18 +49,22 @@ function TopBarTab({
   label,
   icon: Icon,
   end,
+  forceActive,
 }: {
   to: string
   label: string
   icon: LucideIcon
   end?: boolean
+  forceActive?: boolean
 }) {
   return (
     <NavLink
       to={to}
       end={end}
       className="flex h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold"
-      style={({ isActive }) => (isActive ? { background: 'var(--patch-blue-soft)' } : undefined)}
+      style={({ isActive }) =>
+        (forceActive ?? isActive) ? { background: 'var(--patch-blue-soft)' } : undefined
+      }
     >
       <Icon size={20} strokeWidth={2} />
       {label}
@@ -62,11 +74,15 @@ function TopBarTab({
 
 export function Dock() {
   const [quickAddOpen, setQuickAddOpen] = useState(false)
+  // Library's two-root active state (tapping the slot always lands /patterns).
+  const location = useLocation()
+  const libraryActive =
+    location.pathname.startsWith('/patterns') || location.pathname.startsWith('/yarn')
   return (
     <>
       <nav className="dock lg:hidden" style={{ background: 'var(--color-base-100)' }}>
         <DockTab {...TABS[0]} />
-        <DockTab {...TABS[1]} />
+        <DockTab {...TABS[1]} forceActive={libraryActive} />
 
         <button type="button" aria-label="Add a pattern" onClick={() => setQuickAddOpen(true)}>
           <span
@@ -90,7 +106,11 @@ export function Dock() {
         style={{ borderColor: 'var(--color-base-300)', background: 'var(--color-base-100)' }}
       >
         {TABS.map((tab) => (
-          <TopBarTab key={tab.to} {...tab} />
+          <TopBarTab
+            key={tab.to}
+            {...tab}
+            forceActive={tab.to === '/patterns' ? libraryActive : undefined}
+          />
         ))}
         <button
           type="button"

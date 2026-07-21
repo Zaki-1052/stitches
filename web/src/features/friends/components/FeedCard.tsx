@@ -4,7 +4,7 @@
 // finished objects. Taps land on the read-only detail reuse. Lists never load originals
 // (SPEC §8); no cover → yarn-ball placeholder, matching ProjectCard.
 import { Link } from 'react-router'
-import { pb } from '../../../lib/pb.ts'
+import { thumbUrl } from '../../../lib/files.ts'
 import { formatShortDate } from '../../../lib/dates.ts'
 import { Avatar } from '../../../components/Avatar.tsx'
 import { YarnBall } from '../../../components/YarnBall.tsx'
@@ -27,7 +27,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
     >
       {cover ? (
         <img
-          src={pb.files.getURL(record, cover, { thumb: '400x0' })}
+          src={thumbUrl(record, cover, 'grid')}
           alt=""
           loading="lazy"
           className="size-20 shrink-0 rounded-2xl object-cover"

@@ -7,6 +7,7 @@ import { pb } from '../lib/pb.ts'
 import { ProfileCard } from '../features/settings/components/ProfileCard.tsx'
 import { PasswordCard } from '../features/settings/components/PasswordCard.tsx'
 import { CounterPrefsCard } from '../features/settings/components/CounterPrefsCard.tsx'
+import { OfflineCard } from '../features/settings/components/OfflineCard.tsx'
 
 export default function SettingsPage() {
   return (
@@ -19,6 +20,7 @@ export default function SettingsPage() {
         <ProfileCard />
         <PasswordCard />
         <CounterPrefsCard />
+        <OfflineCard />
 
         <button
           type="button"

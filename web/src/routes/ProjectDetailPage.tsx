@@ -10,7 +10,7 @@ import { Pencil } from 'lucide-react'
 import { useReducedMotion } from 'motion/react'
 import { BackBar } from '../components/BackBar.tsx'
 import { YarnBall } from '../components/YarnBall.tsx'
-import { pb } from '../lib/pb.ts'
+import { thumbUrl } from '../lib/files.ts'
 import { useAuth } from '../lib/auth.tsx'
 import type { ProjectStatus, Visibility } from '../lib/schema.ts'
 import { formatShortDate, todayLocalISO, toPbDate } from '../lib/dates.ts'
@@ -31,6 +31,7 @@ import { useCountersRealtime } from '../features/counters/realtime.ts'
 import { ConfirmDeleteDialog } from '../features/projects/components/ConfirmDeleteDialog.tsx'
 import { VisibilityToggle } from '../features/patterns/components/VisibilityToggle.tsx'
 import { SharedByChip } from '../features/friends/components/SharedByChip.tsx'
+import { YarnChip } from '../features/yarn/components/YarnChip.tsx'
 
 function Frame({ right, children }: { right?: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -148,7 +149,7 @@ export default function ProjectDetailPage() {
       <div className="flex flex-col gap-5 px-5 pb-10">
         {project.cover ? (
           <img
-            src={pb.files.getURL(project, project.cover, { thumb: '800x0' })}
+            src={thumbUrl(project, project.cover, 'hero')}
             alt=""
             className="rounded-box aspect-[4/3] w-full object-cover"
             style={{ boxShadow: 'var(--shadow-soft)' }}
@@ -202,6 +203,14 @@ export default function ProjectDetailPage() {
               >
                 {label}
               </span>
+            ))}
+          </div>
+        )}
+
+        {(project.expand?.yarns?.length ?? 0) > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {project.expand!.yarns!.map((yarn) => (
+              <YarnChip key={yarn.id} yarn={yarn} />
             ))}
           </div>
         )}
